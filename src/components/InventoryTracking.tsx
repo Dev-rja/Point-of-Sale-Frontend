@@ -50,6 +50,7 @@ interface InventoryMovement {
   referenceType?: string;
   referenceId?: string;
   timestamp: Date;
+  current_stock?: number | null;
 }
 
 type StockFilter = 'all' | 'low' | 'normal' | 'high';
@@ -60,8 +61,8 @@ type MovementTypeFilter =
   | 'sale'
   | 'adjustment'
   | 'return'
-  | 'damage'
-  | 'transfer';
+  | 'damage';
+type MovementType = 'adjustment' | 'purchase' | 'return' | 'damage';
 
   function mapLogToMovement(log: InventoryLog): InventoryMovement {
     let movementType: MovementTypeFilter = 'adjustment';
@@ -71,7 +72,6 @@ type MovementTypeFilter =
     else if (t.includes('purchase')) movementType = 'purchase';
     else if (t.includes('return')) movementType = 'return';
     else if (t.includes('damage')) movementType = 'damage';
-    else if (t.includes('transfer')) movementType = 'transfer';
     else if (t.includes('initial')) movementType = 'initial';
     else if (t.includes('adjust')) movementType = 'adjustment';
   
@@ -98,14 +98,27 @@ type MovementTypeFilter =
       }
     }
   
+    // --- BEFORE / AFTER using current_stock from backend ---
+    let quantityAfter: number | undefined;
+    let quantityBefore: number | undefined;
+  
+    if (
+      typeof (log as any).current_stock === 'number' &&
+      !Number.isNaN((log as any).current_stock)
+    ) {
+      const currentStock = (log as any).current_stock as number;
+      quantityAfter = currentStock;
+      quantityBefore = currentStock - log.quantity_change;
+    }
+  
     return {
       id: String(log.log_id),
       productId: String(log.product_id),
       productName: log.product_name || `Product #${log.product_id}`,
       movementType,
       quantity: log.quantity_change,
-      quantityBefore: undefined,
-      quantityAfter: undefined,
+      quantityBefore,
+      quantityAfter,
       userId: undefined,
       userName,
       reason,
@@ -114,7 +127,8 @@ type MovementTypeFilter =
       referenceId: undefined,
       timestamp: new Date(log.date_time),
     };
-  }  
+  }
+  
 
 export function InventoryTracking({
   products,
@@ -134,12 +148,20 @@ export function InventoryTracking({
 
   // Add adjustment dialog
   const [showAddAdjustment, setShowAddAdjustment] = useState(false);
-  const [adjustmentForm, setAdjustmentForm] = useState({
+  const [adjustmentForm, setAdjustmentForm] = useState<{
+    productId: string;
+    quantity: string;
+    reason: string;
+    notes: string;
+    type: MovementType;
+  }>({
     productId: '',
     quantity: '',
     reason: '',
     notes: '',
+    type: 'adjustment', // default selection
   });
+  
   const [savingAdjustment, setSavingAdjustment] = useState(false);
 
   // === Load movements from backend ===
@@ -250,10 +272,6 @@ export function InventoryTracking({
       },
       return: { label: 'Return', className: 'bg-purple-100 text-purple-700' },
       damage: { label: 'Damage', className: 'bg-red-100 text-red-700' },
-      transfer: {
-        label: 'Transfer',
-        className: 'bg-indigo-100 text-indigo-700',
-      },
     };
 
     const config =
@@ -269,9 +287,9 @@ export function InventoryTracking({
       alert('Please select a product.');
       return;
     }
-
+  
     const quantity = parseInt(adjustmentForm.quantity, 10);
-
+  
     // Validate quantity
     if (isNaN(quantity) || quantity === 0) {
       alert(
@@ -279,7 +297,7 @@ export function InventoryTracking({
       );
       return;
     }
-
+  
     // Check if stock would go negative (client-side guard)
     if (selectedProduct.stock + quantity < 0) {
       alert(
@@ -289,9 +307,9 @@ export function InventoryTracking({
       );
       return;
     }
-
+  
     setSavingAdjustment(true);
-
+  
     try {
       const remarksParts = [
         adjustmentForm.reason.trim(),
@@ -300,26 +318,49 @@ export function InventoryTracking({
           : '',
         `By: ${currentUserName}`,
       ].filter(Boolean);
-
+  
+      let backendChangeType: BackendMovementType;
+      switch (adjustmentForm.type) {
+        case 'purchase':
+          backendChangeType = 'Purchase';
+          break;
+        case 'return':
+          backendChangeType = 'Return';
+          break;
+        case 'damage':
+          backendChangeType = 'Damage';
+          break;
+        case 'adjustment':
+        default:
+          backendChangeType = 'Adjustment';
+          break;
+      }
+  
       // Call Flask /inventory – this will update Product.stock_quantity
       await addInventoryLog({
         product_id: Number(adjustmentForm.productId),
-        change_type: 'Adjustment' as BackendMovementType,
+        change_type: backendChangeType,
         quantity_change: quantity,
         remarks: remarksParts.join(' | '),
       });
-
+  
       // Refresh logs + products from backend
       const [logs, freshProducts] = await Promise.all([
         getInventoryLogs(),
         fetchProducts(),
       ]);
-
+  
       setMovements(logs.map(mapLogToMovement));
       onUpdateProducts(freshProducts);
-
+  
       setShowAddAdjustment(false);
-      setAdjustmentForm({ productId: '', quantity: '', reason: '', notes: '' });
+      setAdjustmentForm({
+        productId: '',
+        quantity: '',
+        reason: '',
+        notes: '',
+        type: 'adjustment',
+      });
     } catch (error) {
       console.error('Error adding stock adjustment:', error);
       alert('Failed to add stock adjustment. Please try again.');
@@ -752,6 +793,27 @@ export function InventoryTracking({
                   </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="type" className="text-right">
+                    Movement Type
+                  </Label>
+                  <Select
+                    value={adjustmentForm.type}
+                    onValueChange={(value: MovementType) =>
+                      setAdjustmentForm({ ...adjustmentForm, type: value })
+                    }
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select movement type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="adjustment">Adjustment</SelectItem>
+                      <SelectItem value="purchase">Purchase</SelectItem>
+                      <SelectItem value="return">Return</SelectItem>
+                      <SelectItem value="damage">Damage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="reason" className="text-right">
                     Reason
                   </Label>
@@ -899,18 +961,6 @@ export function InventoryTracking({
                 >
                   Damage (
                   {movements.filter((m) => m.movementType === 'damage').length})
-                </Badge>
-                <Badge
-                  onClick={() => setMovementTypeFilter('transfer')}
-                  className={`cursor-pointer px-4 py-2 ${
-                    movementTypeFilter === 'transfer'
-                      ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                      : 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700'
-                  }`}
-                >
-                  Transfer (
-                  {movements.filter((m) => m.movementType === 'transfer').length}
-                  )
                 </Badge>
               </div>
             </CardContent>

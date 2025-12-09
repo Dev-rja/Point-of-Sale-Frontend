@@ -134,7 +134,7 @@ Tracks all stock changes with full audit trail.
 |------------|-----------|-------------|-------------|
 | **id** | string | PRIMARY KEY | Unique movement identifier |
 | **productId** | string | FOREIGN KEY → Products.id, NOT NULL | Product being moved |
-| **movementType** | enum | NOT NULL | Type: 'initial', 'purchase', 'sale', 'adjustment', 'return', 'damage', 'transfer' |
+| **movementType** | enum | NOT NULL | Type: 'initial', 'purchase', 'sale', 'adjustment', 'return', 'damage' |
 | **quantity** | number (integer) | NOT NULL | Quantity changed (positive or negative) |
 | **quantityBefore** | number (integer) | NOT NULL | Stock level before movement |
 | **quantityAfter** | number (integer) | NOT NULL | Stock level after movement |
@@ -156,7 +156,6 @@ Tracks all stock changes with full audit trail.
 - **adjustment**: Manual stock adjustment (counting, corrections)
 - **return**: Customer return (positive quantity)
 - **damage**: Damaged/expired goods removed (negative quantity)
-- **transfer**: Stock transferred to another location
 
 ### Business Logic:
 - Every stock change creates an inventory movement record

@@ -538,7 +538,6 @@ interface SaleItem {
 - `adjustment` - Manual stock correction (positive or negative)
 - `return` - Customer return (positive quantity)
 - `damage` - Damaged/expired items removed (negative quantity)
-- `transfer` - Stock transfer between locations
 
 **Validation Rules:**
 
@@ -965,7 +964,6 @@ const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
 **MULTI_STORE**
 
 - Store/branch management
-- Inter-store transfers
 - Consolidated reporting
 
 **PROMOTIONS**

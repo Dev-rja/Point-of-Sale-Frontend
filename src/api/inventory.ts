@@ -7,8 +7,7 @@ export type MovementType =
   | "Sale"
   | "Adjustment"
   | "Return"
-  | "Damage"
-  | "Transfer";
+  | "Damage";
 
 export interface InventoryLog {
   log_id: number;

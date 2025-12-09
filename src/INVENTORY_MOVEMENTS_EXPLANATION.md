@@ -32,7 +32,6 @@ The **INVENTORY_MOVEMENTS** table is an **audit trail** that tracks every single
 4. **Adjustment** - Manual stock corrections
 5. **Return** - Customer returns
 6. **Damage** - Damaged/expired items removed
-7. **Transfer** - Stock moved to another location
 
 ### Information Tracked:
 - **What** changed (product name, barcode)

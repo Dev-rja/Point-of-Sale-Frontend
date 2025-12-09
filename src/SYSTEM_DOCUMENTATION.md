@@ -165,7 +165,7 @@
       * Adjustment (manual correction)
       * Return (customer return)
       * Damage (damaged/expired goods)
-      * Transfer (stock transfer)
+
     - Timestamp for each movement
     - User tracking (who made the change)
     - Before/after quantities
@@ -1165,7 +1165,7 @@ Structure:
   id: string (generated)
   productId: string (foreign key → PRODUCTS.id)
   productName: string
-  movementType: enum ('initial' | 'purchase' | 'sale' | 'adjustment' | 'return' | 'damage' | 'transfer')
+  movementType: enum ('initial' | 'purchase' | 'sale' | 'adjustment' | 'return' | 'damage')
   quantity: number (positive or negative)
   quantityBefore: number
   quantityAfter: number
@@ -1192,7 +1192,6 @@ Movement Types:
 - adjustment: Manual stock correction
 - return: Customer return (positive)
 - damage: Damaged goods removed (negative)
-- transfer: Stock transferred
 ```
 
 #### **5. SALES Table**

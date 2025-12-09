@@ -1123,7 +1123,6 @@ Login (Required for all)
 
 2. **Multi-Store Management**
    - View All Stores
-   - Transfer Stock Between Stores
    - Consolidated Reports
    - Store Performance Analytics
 
