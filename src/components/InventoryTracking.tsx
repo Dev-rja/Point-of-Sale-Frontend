@@ -63,37 +63,58 @@ type MovementTypeFilter =
   | 'damage'
   | 'transfer';
 
-function mapLogToMovement(log: InventoryLog): InventoryMovement {
-  // Map backend change_type strings to our lowercase filter types
-  let movementType: MovementTypeFilter = 'adjustment';
-  const t = log.change_type.toLowerCase();
-
-  if (t.includes('sale')) movementType = 'sale';
-  else if (t.includes('purchase')) movementType = 'purchase';
-  else if (t.includes('return')) movementType = 'return';
-  else if (t.includes('damage')) movementType = 'damage';
-  else if (t.includes('transfer')) movementType = 'transfer';
-  else if (t.includes('initial')) movementType = 'initial';
-  else if (t.includes('adjust')) movementType = 'adjustment';
-
-  return {
-    id: String(log.log_id),
-    productId: String(log.product_id),
-    productName: log.product_name || `Product #${log.product_id}`,
-    movementType,
-    quantity: log.quantity_change,
-    // We don't get before/after/user/reference from backend; keep them empty for now
-    quantityBefore: undefined,
-    quantityAfter: undefined,
-    userId: undefined,
-    userName: undefined,
-    reason: log.remarks,
-    notes: undefined,
-    referenceType: undefined,
-    referenceId: undefined,
-    timestamp: new Date(log.date_time),
-  };
-}
+  function mapLogToMovement(log: InventoryLog): InventoryMovement {
+    let movementType: MovementTypeFilter = 'adjustment';
+    const t = log.change_type.toLowerCase();
+  
+    if (t.includes('sale')) movementType = 'sale';
+    else if (t.includes('purchase')) movementType = 'purchase';
+    else if (t.includes('return')) movementType = 'return';
+    else if (t.includes('damage')) movementType = 'damage';
+    else if (t.includes('transfer')) movementType = 'transfer';
+    else if (t.includes('initial')) movementType = 'initial';
+    else if (t.includes('adjust')) movementType = 'adjustment';
+  
+    let rawRemarks = log.remarks || '';
+    let reason: string | undefined;
+    let notes: string | undefined;
+    let userName: string | undefined;
+  
+    if (rawRemarks) {
+      const parts = rawRemarks.split('|').map((s) => s.trim());
+  
+      for (const part of parts) {
+        const lower = part.toLowerCase();
+        if (lower.startsWith('reason:')) {
+          reason = part.slice('reason:'.length).trim();
+        } else if (lower.startsWith('notes:')) {
+          notes = part.slice('notes:'.length).trim();
+        } else if (lower.startsWith('by:')) {
+          userName = part.slice('by:'.length).trim();
+        } else if (!reason) {
+          // fallback for old data like "damage" without "Reason:" prefix
+          reason = part;
+        }
+      }
+    }
+  
+    return {
+      id: String(log.log_id),
+      productId: String(log.product_id),
+      productName: log.product_name || `Product #${log.product_id}`,
+      movementType,
+      quantity: log.quantity_change,
+      quantityBefore: undefined,
+      quantityAfter: undefined,
+      userId: undefined,
+      userName,
+      reason,
+      notes,
+      referenceType: undefined,
+      referenceId: undefined,
+      timestamp: new Date(log.date_time),
+    };
+  }  
 
 export function InventoryTracking({
   products,
