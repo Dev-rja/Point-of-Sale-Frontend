@@ -3,7 +3,10 @@ import { LoginPage } from './components/LoginPage';
 import { SignUpPage } from './components/SignUpPage';
 import { AdminDashboard } from './components/AdminDashboard';
 import { CashierInterface } from './components/CashierInterface';
-import { authAPI, productsAPI, salesAPI, initializeDemoData, healthCheck, setAccessToken } from './utils/api';
+import { authAPI, salesAPI, initializeDemoData, healthCheck } from './utils/api';
+import { fetchProducts, createProduct, updateProduct } from './api/products';
+
+// ========= Types =========
 
 export interface User {
   id: string;
@@ -40,6 +43,8 @@ export interface Sale {
   timestamp: Date;
   receiptNumber: string;
 }
+
+// ========= App Component =========
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -95,10 +100,10 @@ function App() {
   const loadData = async () => {
     try {
       const [productsData, salesData] = await Promise.all([
-        productsAPI.getAll(),
+        fetchProducts(),      // from Flask backend
         salesAPI.getAll()
       ]);
-      
+
       setProducts(productsData);
       setSales(salesData);
     } catch (error) {
@@ -125,7 +130,12 @@ function App() {
     setSales([]);
   };
 
-  const handleSignUp = async (username: string, email: string, password: string, role: 'admin' | 'cashier') => {
+  const handleSignUp = async (
+    username: string,
+    email: string,
+    password: string,
+    role: 'admin' | 'cashier'
+  ) => {
     try {
       const name = username.charAt(0).toUpperCase() + username.slice(1);
       await authAPI.signup(username, email, password, role, name);
@@ -149,9 +159,14 @@ function App() {
 
   const handleAddProduct = async (product: Omit<Product, 'id'>) => {
     try {
-      const newProduct = await productsAPI.create(product);
-      setProducts(prev => [...prev, newProduct]);
-      return newProduct;
+      // Create in Flask
+      await createProduct(product);
+      // Reload from backend to get real IDs / values
+      const productsData = await fetchProducts();
+      setProducts(productsData);
+
+      // InventoryManagement expects a Product return
+      return { ...product, id: 'temp' };
     } catch (error) {
       console.error('Failed to add product:', error);
       throw error;
@@ -160,24 +175,31 @@ function App() {
 
   const handleUpdateProduct = async (id: string, updates: Partial<Product>) => {
     try {
-      const updatedProduct = await productsAPI.update(id, updates);
-      setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
-      return updatedProduct;
+      // Update in Flask
+      await updateProduct(id, updates);
+      // Reload from backend
+      const productsData = await fetchProducts();
+      setProducts(productsData);
+
+      const existing = productsData.find(p => p.id === id);
+      return existing ?? ({ ...updates, id } as Product);
     } catch (error) {
       console.error('Failed to update product:', error);
       throw error;
     }
   };
 
-  const handleAddSale = async (saleData: Omit<Sale, 'id' | 'receiptNumber' | 'timestamp'>) => {
+  const handleAddSale = async (
+    saleData: Omit<Sale, 'id' | 'receiptNumber' | 'timestamp'>
+  ) => {
     try {
       const newSale = await salesAPI.create(saleData);
       setSales(prev => [newSale, ...prev]);
-      
-      // Reload products to get updated stock
-      const updatedProducts = await productsAPI.getAll();
+
+      // Reload products to get updated stock from Flask
+      const updatedProducts = await fetchProducts();
       setProducts(updatedProducts);
-      
+
       return newSale;
     } catch (error) {
       console.error('Failed to add sale:', error);
@@ -187,7 +209,10 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f0f9ed 0%, #ffffff 100%)' }}>
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'linear-gradient(135deg, #f0f9ed 0%, #ffffff 100%)' }}
+      >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a5a1a] mx-auto"></div>
           <p className="mt-4 text-gray-600">Connecting to backend...</p>
@@ -198,36 +223,47 @@ function App() {
 
   if (!currentUser) {
     if (showSignUp) {
-      return <SignUpPage onSignUp={handleSignUp} onBackToLogin={handleBackToLogin} />;
+      return (
+        <SignUpPage
+          onSignUp={handleSignUp}
+          onBackToLogin={handleBackToLogin}
+        />
+      );
     }
-    return <LoginPage onLogin={handleLogin} onGoToSignUp={handleGoToSignUp} />;
+    return (
+      <LoginPage
+        onLogin={handleLogin}
+        onGoToSignUp={handleGoToSignUp}
+      />
+    );
   }
 
   return (
-    <>
-      <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #f0f9ed 0%, #ffffff 100%)' }}>
-        {currentUser.role === 'admin' ? (
-          <AdminDashboard
-            user={currentUser}
-            products={products}
-            sales={sales}
-            onLogout={handleLogout}
-            onUpdateProducts={handleUpdateProducts}
-            onAddProduct={handleAddProduct}
-            onUpdateProduct={handleUpdateProduct}
-            onAddSale={handleAddSale}
-          />
-        ) : (
-          <CashierInterface
-            user={currentUser}
-            products={products}
-            sales={sales}
-            onLogout={handleLogout}
-            onAddSale={handleAddSale}
-          />
-        )}
-      </div>
-    </>
+    <div
+      className="min-h-screen"
+      style={{ background: 'linear-gradient(135deg, #f0f9ed 0%, #ffffff 100%)' }}
+    >
+      {currentUser.role === 'admin' ? (
+        <AdminDashboard
+          user={currentUser}
+          products={products}
+          sales={sales}
+          onLogout={handleLogout}
+          onUpdateProducts={handleUpdateProducts}
+          onAddProduct={handleAddProduct}
+          onUpdateProduct={handleUpdateProduct}
+          onAddSale={handleAddSale}
+        />
+      ) : (
+        <CashierInterface
+          user={currentUser}
+          products={products}
+          sales={sales}
+          onLogout={handleLogout}
+          onAddSale={handleAddSale}
+        />
+      )}
+    </div>
   );
 }
 

@@ -232,7 +232,8 @@ export function AdminDashboard({
           <TabsContent value="inventory">
             <InventoryTracking
               products={products}
-              onUpdateProduct={onUpdateProduct}
+              onUpdateProducts={onUpdateProducts}
+              currentUserName={user.name}
             />
           </TabsContent>
 
