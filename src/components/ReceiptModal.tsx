@@ -79,8 +79,8 @@ export function ReceiptModal({
                   <tr key={index} className="border-b border-gray-100">
                     <td className="py-2 text-gray-900">{item.productName}</td>
                     <td className="text-center py-2 text-gray-900">{item.quantity}</td>
-                    <td className="text-right py-2 text-gray-900">₱{item.price.toFixed(2)}</td>
-                    <td className="text-right py-2 text-gray-900">₱{item.subtotal.toFixed(2)}</td>
+                    <td className="text-right py-2 text-gray-900">₹{item.price.toFixed(2)}</td>
+                    <td className="text-right py-2 text-gray-900">₹{item.subtotal.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -91,7 +91,7 @@ export function ReceiptModal({
           <div className="space-y-2">
             <div className="flex justify-between text-lg">
               <span className="text-gray-900">Total</span>
-              <span className="text-gray-900">₱{total.toFixed(2)}</span>
+              <span className="text-gray-900">₹{total.toFixed(2)}</span>
             </div>
             
             <div className="flex justify-between text-sm">
@@ -103,11 +103,11 @@ export function ReceiptModal({
               <>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Cash Received</span>
-                  <span className="text-gray-900">₱{cashReceived.toFixed(2)}</span>
+                  <span className="text-gray-900">₹{cashReceived.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Change</span>
-                  <span className="text-gray-900">₱{change?.toFixed(2)}</span>
+                  <span className="text-gray-900">₹{change?.toFixed(2)}</span>
                 </div>
               </>
             )}

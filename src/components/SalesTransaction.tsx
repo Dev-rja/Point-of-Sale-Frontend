@@ -221,7 +221,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                       <div className="text-sm text-gray-900 mb-1">{product.name}</div>
                       <div className="text-xs text-gray-500 mb-2">{product.category}</div>
                       <div className="flex justify-between items-center">
-                        <span className="text-[#1a5a1a]">₱{product.price.toFixed(2)}</span>
+                        <span className="text-[#1a5a1a]">₹{product.price.toFixed(2)}</span>
                         <span className={`text-xs ${product.stock <= product.minStock ? 'text-red-600' : 'text-gray-500'}`}>
                           Stock: {product.stock}
                         </span>
@@ -293,7 +293,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
                           <div className="text-sm text-gray-900">{item.productName}</div>
-                          <div className="text-xs text-gray-500">₱{item.price.toFixed(2)} each</div>
+                          <div className="text-xs text-gray-500">₹{item.price.toFixed(2)} each</div>
                         </div>
                         <Button
                           variant="ghost"
@@ -327,7 +327,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                           </Button>
                         </div>
                         <div className="text-sm text-[#1a5a1a]">
-                          ₱{item.subtotal.toFixed(2)}
+                        ₹{item.subtotal.toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -338,7 +338,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-900">Total</span>
                     <span className="text-2xl text-[#1a5a1a]">
-                      ₱{calculateTotal().toFixed(2)}
+                    ₹{calculateTotal().toFixed(2)}
                     </span>
                   </div>
                   

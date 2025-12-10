@@ -228,7 +228,7 @@ export function InventoryManagement({ products, onUpdateProducts, onAddProduct, 
                   <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-gray-900">{product.name}</td>
                     <td className="py-3 px-4 text-gray-600">{product.category}</td>
-                    <td className="py-3 px-4 text-right text-gray-900">₱{product.price.toFixed(2)}</td>
+                    <td className="py-3 px-4 text-right text-gray-900">₹{product.price.toFixed(2)}</td>
                     <td className="py-3 px-4 text-right">
                       <span className={`inline-flex items-center gap-1 ${
                         product.stock <= product.minStock ? 'text-red-600' : 'text-gray-900'
@@ -305,7 +305,7 @@ export function InventoryManagement({ products, onUpdateProducts, onAddProduct, 
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Price (₱)</Label>
+                <Label htmlFor="price">Price (₹)</Label>
                 <Input
                   id="price"
                   type="number"
@@ -343,13 +343,26 @@ export function InventoryManagement({ products, onUpdateProducts, onAddProduct, 
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="minStock">Min Stock Level</Label>
+              <Label htmlFor="minStock">Min Stock Level</Label>
                 <Input
                   id="minStock"
                   type="number"
-                  min="0"
+                  min={1}
                   value={formData.minStock}
-                  onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+
+                    // allow temporary empty while typing
+                    if (raw === '') {
+                      setFormData({ ...formData, minStock: '1' });
+                      return;
+                    }
+
+                    const num = Number(raw);
+                    const clamped = Number.isNaN(num) ? 1 : Math.max(1, num);
+
+                    setFormData({ ...formData, minStock: String(clamped) });
+                  }}
                   required
                 />
               </div>

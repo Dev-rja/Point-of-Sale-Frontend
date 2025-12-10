@@ -41,7 +41,7 @@ function convertToFrontend(p: BackendProduct): Product {
     categoryId: p.category_id,
     price: p.price,
     stock: p.stock_quantity,
-    barcode: "",     // Flask does not have these fields yet
+    barcode: p.barcode ?? "",
     minStock: p.min_stock ?? 0,
   };
 }
@@ -86,5 +86,13 @@ export async function updateProduct(
   if (updates.minStock !== undefined) body.min_stock = updates.minStock;
   if (updates.barcode !== undefined) body.barcode = updates.barcode; 
 
-  await api.put(`/api/update_product/${id}`, body);
+  try {
+    await api.put(`/api/update_product/${id}`, body);
+  } catch (err: any) {
+    const msg =
+      err?.response?.data?.error ||
+      err?.message ||
+      "Failed to update product";
+    throw new Error(msg);
+  }
 }

@@ -356,7 +356,7 @@ interface Product {
 | id         | string    | Yes      | -       | Unique product identifier |
 | name       | string    | Yes      | -       | Product name              |
 | category   | string    | Yes      | -       | Product category          |
-| price      | number    | Yes      | -       | Selling price (₱)         |
+| price      | number    | Yes      | -       | Selling price (₹)         |
 | stock      | number    | Yes      | 0       | Current stock quantity    |
 | barcode    | string    | Yes      | -       | Product barcode/SKU       |
 | minStock   | number    | Yes      | 10      | Minimum stock threshold   |
@@ -434,7 +434,7 @@ interface Product {
 | cashierId     | string    | Yes      | ID of cashier who made sale     |
 | cashierName   | string    | Yes      | Name of cashier                 |
 | items         | array     | Yes      | Array of sale items (see below) |
-| total         | number    | Yes      | Total sale amount (₱)           |
+| total         | number    | Yes      | Total sale amount (₹)           |
 | paymentMethod | string    | Yes      | Payment method used             |
 | timestamp     | Date      | Yes      | Sale completion timestamp       |
 

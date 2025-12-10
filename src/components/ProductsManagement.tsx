@@ -9,6 +9,15 @@ import { Badge } from './ui/badge';
 import { Product } from '../App';
 import { Plus, Pencil, Search, FolderOpen, Tag, Trash2 } from 'lucide-react';
 
+type ProductFormData = {
+  name: string;
+  category: string;   // dropdown category name
+  price: string;
+  stock: string;
+  barcode: string;
+  minStock: string;
+};
+
 interface ProductsManagementProps {
   products: Product[];
   onUpdateProducts: (products: Product[]) => void;
@@ -39,15 +48,15 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     category: '',
-    categoryId: null,
     price: '',
     stock: '',
     barcode: '',
-    minStock: ''
+    minStock: '1',
   });
+  
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,11 +93,12 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
       price: '',
       stock: '',
       barcode: '',
-      minStock: ''
+      minStock: '1',
     });
     setEditingProduct(null);
     setShowAddDialog(true);
   };
+  
 
   const handleEdit = (product: Product) => {
     setFormData({
@@ -97,11 +107,11 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
       price: product.price.toString(),
       stock: product.stock.toString(),
       barcode: product.barcode,
-      minStock: product.minStock.toString()
+      minStock: product.minStock.toString(),
     });
     setEditingProduct(product);
     setShowAddDialog(true);
-  };
+  };  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,14 +121,25 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
     );
   
     const categoryId = matchingCategoryProduct?.categoryId ?? null;
+    const trimmedBarcode = formData.barcode.trim();
+
+    const isDuplicateBarcode = products.some(p =>
+      p.barcode &&
+      p.barcode === trimmedBarcode &&
+      (!editingProduct || p.id !== editingProduct.id)
+    );
+  
+    if (trimmedBarcode && isDuplicateBarcode) {
+      alert('Barcode already exists. Please use a different barcode.');
+      return;
+    }
   
     const productData: Omit<Product, 'id'> = {
       name: formData.name,
       category: formData.category,
-      categoryId: formData.categoryId,
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock, 10),
-      barcode: formData.barcode,
+      barcode: trimmedBarcode,
       minStock: parseInt(formData.minStock, 10),
     };
   
@@ -129,9 +150,15 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
         await onAddProduct(productData);
       }
       setShowAddDialog(false);
-    } catch (error) {
-      console.error('Failed to save product:', error);
-      alert('Failed to save product. Please try again.');
+    } catch (error: any) {
+      console.error("Failed to save product:", error);
+  
+      const message =
+        (error instanceof Error && error.message) ||
+        error?.response?.data?.error ||
+        "Failed to save product. Please try again.";
+  
+      alert(message);
     }
   };
 
@@ -228,7 +255,7 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
                   <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-gray-900">{product.name}</td>
                     <td className="py-3 px-4 text-gray-600">{product.category}</td>
-                    <td className="py-3 px-4 text-right text-gray-900">₱{product.price.toFixed(2)}</td>
+                    <td className="py-3 px-4 text-right text-gray-900">₹{product.price.toFixed(2)}</td>
                     <td className="py-3 px-4 text-gray-600">{product.barcode}</td>
                     <td className="py-3 px-4 text-center">
                       <Button
@@ -277,16 +304,14 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category}
-                onValueChange={(value) => {
-                  const selected = categories.find(c => c.category_name === value);
-                  setFormData({
-                    ...formData,
-                    category: value,
-                    categoryId: selected?.category_id ?? null
-                  });
+                onValueChange={(value: string) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    category: value
+                  }));
                 }}
               >
                 <SelectTrigger id="category">
@@ -304,7 +329,7 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Price (₱)</Label>
+                <Label htmlFor="price">Price (₹)</Label>
                 <Input
                   id="price"
                   type="number"
@@ -342,15 +367,29 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="minStock">Min Stock Level</Label>
+              <Label htmlFor="minStock">Min Stock Level</Label>
                 <Input
                   id="minStock"
                   type="number"
-                  min="0"
+                  min={1}
                   value={formData.minStock}
-                  onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+
+                    // allow temporary empty while typing
+                    if (raw === '') {
+                      setFormData({ ...formData, minStock: '1' });
+                      return;
+                    }
+
+                    const num = Number(raw);
+                    const clamped = Number.isNaN(num) ? 1 : Math.max(1, num);
+
+                    setFormData({ ...formData, minStock: String(clamped) });
+                  }}
                   required
                 />
+
               </div>
             </div>
 

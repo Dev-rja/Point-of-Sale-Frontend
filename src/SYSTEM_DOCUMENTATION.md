@@ -897,9 +897,9 @@ END
   * Products
   * Reports
 - Statistics cards:
-  * Today's Revenue: ₱0.00
-  * This Week: ₱0.00
-  * This Month: ₱0.00
+  * Today's Revenue: ₹0.00
+  * This Week: ₹0.00
+  * This Month: ₹0.00
   * Total Transactions: 0
 - Low Stock Alerts section
 - Recent Transactions table
@@ -1144,11 +1144,11 @@ Indexes:
 - INDEX: category
 
 Demo Products:
-- Rice 25kg (₱1,250.00, barcode: 8850123456789)
-- Cooking Oil 1L (₱180.00, barcode: 8850234567890)
-- Sugar 1kg (₱65.00, barcode: 8850345678901)
-- Coffee 3-in-1 Pack (₱120.00, barcode: 8850456789012)
-- Instant Noodles Pack (₱85.00, barcode: 8850567890123)
+- Rice 25kg (₹1,250.00, barcode: 8850123456789)
+- Cooking Oil 1L (₹180.00, barcode: 8850234567890)
+- Sugar 1kg (₹65.00, barcode: 8850345678901)
+- Coffee 3-in-1 Pack (₹120.00, barcode: 8850456789012)
+- Instant Noodles Pack (₹85.00, barcode: 8850567890123)
 
 Constraints:
 - price > 0
@@ -1797,11 +1797,11 @@ The system automatically initializes demo data on first load:
      - Name: Jars Christian Lerio
 
 4. **Demo Products:**
-   - Rice 25kg (₱1,250.00, Stock: 50)
-   - Cooking Oil 1L (₱180.00, Stock: 30)
-   - Sugar 1kg (₱65.00, Stock: 100)
-   - Coffee 3-in-1 Pack (₱120.00, Stock: 75)
-   - Instant Noodles Pack (₱85.00, Stock: 120)
+   - Rice 25kg (₹1,250.00, Stock: 50)
+   - Cooking Oil 1L (₹180.00, Stock: 30)
+   - Sugar 1kg (₹65.00, Stock: 100)
+   - Coffee 3-in-1 Pack (₹120.00, Stock: 75)
+   - Instant Noodles Pack (₹85.00, Stock: 120)
 
 ---
 
@@ -2037,7 +2037,7 @@ function calculateCartTotal(cart: SaleItem[]): number {
 //   { name: "Rice", quantity: 2, price: 1250 }, // 2500
 //   { name: "Oil", quantity: 1, price: 180 }    // 180
 // ]
-// Total: 2500 + 180 = ₱2,680.00
+// Total: 2500 + 180 = ₹2,680.00
 ```
 
 #### **2. Cash Change Calculation**
@@ -2053,7 +2053,7 @@ function calculateChange(total: number, cashReceived: number): {
   if (cashReceived < total) {
     return {
       change: 0,
-      error: `Insufficient payment. Need ₱${(total - cashReceived).toFixed(2)} more.`
+      error: `Insufficient payment. Need ₹${(total - cashReceived).toFixed(2)} more.`
     };
   }
   
@@ -2063,9 +2063,9 @@ function calculateChange(total: number, cashReceived: number): {
 }
 
 // Example:
-// Total: ₱1,430.00
-// Cash Received: ₱1,500.00
-// Change: ₱70.00
+// Total: ₹1,430.00
+// Cash Received: ₹1,500.00
+// Change: ₹70.00
 ```
 
 ---
@@ -2543,11 +2543,11 @@ function applyDiscount(
 }
 
 // Example 1: Percentage discount
-// Total: ₱1,000.00, Discount: 10%
+// Total: ₹1,000.00, Discount: 10%
 // Result: { discountAmount: 100, finalTotal: 900 }
 
 // Example 2: Fixed discount
-// Total: ₱1,000.00, Discount: ₱50
+// Total: ₹1,000.00, Discount: ₹50
 // Result: { discountAmount: 50, finalTotal: 950 }
 ```
 

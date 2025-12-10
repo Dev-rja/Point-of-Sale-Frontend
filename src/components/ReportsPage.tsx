@@ -109,7 +109,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
-                <p className="text-2xl text-[#1a5a1a]">₱{totalRevenue.toFixed(2)}</p>
+                <p className="text-2xl text-[#1a5a1a]">₹{totalRevenue.toFixed(2)}</p>
               </div>
               <div className="bg-gradient-to-br from-[#D1EDC5] to-[#a8dfa0] p-3 rounded-xl">
                 <DollarSign className="size-6 text-[#1a5a1a]" />
@@ -137,7 +137,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Avg Transaction</p>
-                <p className="text-2xl text-[#1a5a1a]">₱{averageTransaction.toFixed(2)}</p>
+                <p className="text-2xl text-[#1a5a1a]">₹{averageTransaction.toFixed(2)}</p>
               </div>
               <div className="bg-gradient-to-br from-[#D1EDC5] to-[#a8dfa0] p-3 rounded-xl">
                 <TrendingUp className="size-6 text-[#1a5a1a]" />
@@ -151,7 +151,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Inventory Value</p>
-                <p className="text-2xl text-[#1a5a1a]">₱{totalInventoryValue.toFixed(2)}</p>
+                <p className="text-2xl text-[#1a5a1a]">₹{totalInventoryValue.toFixed(2)}</p>
               </div>
               <div className="bg-gradient-to-br from-[#D1EDC5] to-[#a8dfa0] p-3 rounded-xl">
                 <Package className="size-6 text-[#1a5a1a]" />
@@ -162,7 +162,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
       </div>
 
       {/* Charts */}
-      <Tabs value={reportPeriod} onValueChange={(v) => setReportPeriod(v as any)}>
+      <Tabs value={reportPeriod} onValueChange={(v: string) => setReportPeriod(v as any)}>
         <TabsList className="bg-white border border-[#D1EDC5]">
           <TabsTrigger value="daily" className="data-[state=active]:bg-[#D1EDC5] data-[state=active]:text-[#1a5a1a]">Daily</TabsTrigger>
           <TabsTrigger value="weekly" className="data-[state=active]:bg-[#D1EDC5] data-[state=active]:text-[#1a5a1a]">Weekly</TabsTrigger>
@@ -182,7 +182,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="revenue" fill="#D1EDC5" name="Revenue (₱)" />
+                  <Bar dataKey="revenue" fill="#D1EDC5" name="Revenue (₹)" />
                   <Bar dataKey="transactions" fill="#a8dfa0" name="Transactions" />
                 </BarChart>
               </ResponsiveContainer>
@@ -227,7 +227,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
                         <p className="text-xs text-gray-500">{product.quantity} units sold</p>
                       </div>
                     </div>
-                    <p className="text-sm text-[#1a5a1a]">₱{product.revenue.toFixed(2)}</p>
+                    <p className="text-sm text-[#1a5a1a]">₹{product.revenue.toFixed(2)}</p>
                   </div>
                 ))}
               </div>
@@ -313,7 +313,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right text-gray-900">{sale.items.length}</td>
-                      <td className="py-3 px-4 text-right text-[#1a5a1a]">₱{sale.total.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right text-[#1a5a1a]">₹{sale.total.toFixed(2)}</td>
                     </tr>
                   ))
                 ) : (
@@ -353,7 +353,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
                     <td className="py-3 px-4 text-gray-600">{product.category}</td>
                     <td className="py-3 px-4 text-right text-gray-900">{product.stock}</td>
                     <td className="py-3 px-4 text-right text-gray-900">
-                      ₱{(product.price * product.stock).toFixed(2)}
+                    ₹{(product.price * product.stock).toFixed(2)}
                     </td>
                     <td className="py-3 px-4 text-right">
                       {product.stock <= product.minStock ? (
@@ -450,8 +450,8 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
                         <tr key={index} className="border-b border-gray-100">
                           <td className="py-3 px-4 text-sm text-gray-900">{item.productName}</td>
                           <td className="py-3 px-4 text-center text-sm text-gray-900">{item.quantity}</td>
-                          <td className="py-3 px-4 text-right text-sm text-gray-900">₱{item.price.toFixed(2)}</td>
-                          <td className="py-3 px-4 text-right text-sm text-[#1a5a1a]">₱{item.subtotal.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-right text-sm text-gray-900">₹{item.price.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-right text-sm text-[#1a5a1a]">₹{item.subtotal.toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -463,7 +463,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
               <div className="bg-gradient-to-r from-[#D1EDC5] to-[#a8dfa0] rounded-lg p-4">
                 <div className="flex justify-between items-center">
                   <span className="text-[#1a5a1a]">Total Amount</span>
-                  <span className="text-2xl text-[#1a5a1a]">₱{selectedSale.total.toFixed(2)}</span>
+                  <span className="text-2xl text-[#1a5a1a]">₹{selectedSale.total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center mt-2 text-sm">
                   <span className="text-[#1a5a1a]">Total Items</span>

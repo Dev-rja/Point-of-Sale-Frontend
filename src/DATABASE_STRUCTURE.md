@@ -111,11 +111,11 @@ Stores product catalog information.
 - `product:sku:{sku}` - Lookup by SKU
 
 ### Demo Products:
-1. Rice 25kg - ₱1,250 (Groceries)
-2. Cooking Oil 1L - ₱180 (Groceries)
-3. Sugar 1kg - ₱65 (Groceries)
-4. Coffee 3-in-1 Pack - ₱120 (Beverages)
-5. Instant Noodles Pack - ₱85 (Food)
+1. Rice 25kg - ₹1,250 (Groceries)
+2. Cooking Oil 1L - ₹180 (Groceries)
+3. Sugar 1kg - ₹65 (Groceries)
+4. Coffee 3-in-1 Pack - ₹120 (Beverages)
+5. Instant Noodles Pack - ₹85 (Food)
 
 ### Business Logic:
 - `currentStock` is calculated/updated based on INVENTORY_MOVEMENTS

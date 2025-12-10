@@ -415,7 +415,7 @@ export function InventoryTracking({
                   <Package className="size-5 text-[#4A7C3A]" />
                 </div>
                 <div className="text-2xl text-[#2D5016]">
-                  ₱{totalStockValue.toFixed(2)}
+                ₹{totalStockValue.toFixed(2)}
                 </div>
               </CardContent>
             </Card>
@@ -635,7 +635,7 @@ export function InventoryTracking({
                             {product.minStock}
                           </td>
                           <td className="py-3 px-4 text-right text-gray-900">
-                            ₱{stockValue.toFixed(2)}
+                          ₹{stockValue.toFixed(2)}
                           </td>
                           <td className="py-3 px-4 text-center">
                             <Badge

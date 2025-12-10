@@ -133,7 +133,7 @@ export function CashierInterface({ user, products, sales, onLogout, onAddSale }:
                               </span>
                             </td>
                             <td className="py-4 px-4 text-right text-[#2D5016]">{sale.items.length}</td>
-                            <td className="py-4 px-4 text-right text-[#4A7C3A]">₱{sale.total.toFixed(2)}</td>
+                            <td className="py-4 px-4 text-right text-[#4A7C3A]">₹{sale.total.toFixed(2)}</td>
                           </tr>
                         ))
                       ) : (
@@ -234,8 +234,8 @@ export function CashierInterface({ user, products, sales, onLogout, onAddSale }:
                         <tr key={index} className="border-b border-[#D4E7C5]">
                           <td className="py-3 px-4 text-[#2D5016]">{item.productName}</td>
                           <td className="py-3 px-4 text-center text-[#2D5016]">{item.quantity}</td>
-                          <td className="py-3 px-4 text-right text-[#5B7A4A]">₱{item.price.toFixed(2)}</td>
-                          <td className="py-3 px-4 text-right text-[#4A7C3A]">₱{item.subtotal.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-right text-[#5B7A4A]">₹{item.price.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-right text-[#4A7C3A]">₹{item.subtotal.toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -247,7 +247,7 @@ export function CashierInterface({ user, products, sales, onLogout, onAddSale }:
               <div className="bg-gradient-to-br from-[#4A7C3A] to-[#5B8A47] rounded-2xl p-6 shadow-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-white/90">Total Amount</span>
-                  <span className="text-white">₱{selectedSale.total.toFixed(2)}</span>
+                  <span className="text-white">₹{selectedSale.total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <span className="text-white/90">Total Items</span>

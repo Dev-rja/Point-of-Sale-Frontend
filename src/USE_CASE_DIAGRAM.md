@@ -774,19 +774,19 @@
 
 **Flow:**
 1. **Cashier** scans Rice 25kg barcode
-   - **System** finds product, shows ₱1,250.00
+   - **System** finds product, shows ₹1,250.00
    - **System** adds to cart, displays quantity: 1
 2. **Cashier** scans Cooking Oil 1L barcode
-   - **System** finds product, shows ₱180.00
+   - **System** finds product, shows ₹180.00
    - **System** adds to cart, displays quantity: 1
 3. **Cashier** reviews cart:
-   - Rice 25kg × 1 = ₱1,250.00
-   - Cooking Oil 1L × 1 = ₱180.00
-   - **Total: ₱1,430.00**
+   - Rice 25kg × 1 = ₹1,250.00
+   - Cooking Oil 1L × 1 = ₹180.00
+   - **Total: ₹1,430.00**
 4. **Cashier** selects payment method: Cash
-5. **Customer** pays ₱1,500.00
-6. **Cashier** enters cash received: ₱1,500.00
-7. **System** calculates change: ₱70.00
+5. **Customer** pays ₹1,500.00
+6. **Cashier** enters cash received: ₹1,500.00
+7. **System** calculates change: ₹70.00
 8. **System** processes sale:
    - Deducts 1 from Rice 25kg stock (50 → 49)
    - Deducts 1 from Cooking Oil 1L stock (30 → 29)
@@ -847,12 +847,12 @@
 1. **Cashier** logs in
 2. **System** displays dashboard
 3. **Cashier** sees summary:
-   - Sales Today: ₱12,450.00 (8 transactions)
+   - Sales Today: ₹12,450.00 (8 transactions)
 4. **Cashier** clicks "View My Sales"
 5. **System** filters sales where cashierId = "cashier-001"
 6. **System** displays list:
-   - RCP-1733414400000 | 14:30 | ₱1,430.00 | Cash
-   - RCP-1733415600000 | 15:00 | ₱2,340.00 | GCash
+   - RCP-1733414400000 | 14:30 | ₹1,430.00 | Cash
+   - RCP-1733415600000 | 15:00 | ₹2,340.00 | GCash
    - ... (8 total)
 7. **Cashier** clicks on receipt RCP-1733414400000
 8. **System** displays full receipt details:
@@ -879,11 +879,11 @@
 2. **Admin** selects "Monthly Sales Report"
 3. **System** retrieves all sales for current month (December 2024)
 4. **System** calculates:
-   - Total Revenue: ₱245,680.00
+   - Total Revenue: ₹245,680.00
    - Transaction Count: 156 sales
-   - Average Sale: ₱1,575.00
+   - Average Sale: ₹1,575.00
    - Top Product: Rice 25kg (45 units sold)
-   - Top Category: Groceries (₱98,450.00)
+   - Top Category: Groceries (₹98,450.00)
 5. **System** generates charts:
    - Daily sales trend (line chart)
    - Sales by category (pie chart)
@@ -1167,7 +1167,7 @@ Login (Required for all)
 - Receipt numbers are unique
 - Cashiers can only view own sales
 - Only admins can modify inventory
-- All monetary calculations are in PHP (₱)
+- All monetary calculations are in PHP (₹)
 
 ---
 

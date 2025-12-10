@@ -88,11 +88,11 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
         <div className="mb-4 p-4 bg-gradient-to-r from-[#D1EDC5] to-[#a8dfa0] rounded-xl">
           <div className="flex justify-between items-center">
             <span className="text-[#1a5a1a]">Total Amount</span>
-            <span className="text-2xl text-[#1a5a1a]">₱{total.toFixed(2)}</span>
+            <span className="text-2xl text-[#1a5a1a]">₹{total.toFixed(2)}</span>
           </div>
         </div>
 
-        <Tabs value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)}>
+        <Tabs value={paymentMethod} onValueChange={(v: string) => setPaymentMethod(v as any)}>
           <TabsList className="grid w-full grid-cols-3 bg-[#f0f9ed]">
             <TabsTrigger value="cash" className="data-[state=active]:bg-[#D1EDC5] data-[state=active]:text-[#1a5a1a]">
               <DollarSign className="size-4 mr-1" />
@@ -126,7 +126,7 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
               <div className="p-3 bg-gradient-to-r from-[#D1EDC5] to-[#a8dfa0] rounded-xl">
                 <div className="flex justify-between items-center">
                   <span className="text-[#1a5a1a]">Change</span>
-                  <span className="text-xl text-[#1a5a1a]">₱{cashChange.toFixed(2)}</span>
+                  <span className="text-xl text-[#1a5a1a]">₹{cashChange.toFixed(2)}</span>
                 </div>
               </div>
             )}
@@ -135,7 +135,7 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
           <TabsContent value="gcash" className="space-y-4">
             <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
               <p className="text-sm text-blue-800">
-                Ask customer to send ₱{total.toFixed(2)} to your GCash number and provide the reference number.
+                Ask customer to send ₹{total.toFixed(2)} to your GCash number and provide the reference number.
               </p>
             </div>
 
@@ -167,7 +167,7 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
           <TabsContent value="card" className="space-y-4">
             <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
               <p className="text-sm text-purple-800">
-                Process card payment of ₱{total.toFixed(2)} through your card terminal.
+                Process card payment of ₹{total.toFixed(2)} through your card terminal.
               </p>
             </div>
 
