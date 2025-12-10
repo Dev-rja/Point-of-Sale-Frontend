@@ -15,15 +15,17 @@ export interface User {
   name: string;
 }
 
-export interface Product {
+export type Product = {
   id: string;
   name: string;
   category: string;
+  categoryId?: number | null;
   price: number;
   stock: number;
   barcode: string;
   minStock: number;
-}
+};
+
 
 export interface SaleItem {
   productId: string;

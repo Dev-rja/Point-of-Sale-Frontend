@@ -42,6 +42,7 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
   const [formData, setFormData] = useState({
     name: '',
     category: '',
+    categoryId: null,
     price: '',
     stock: '',
     barcode: '',
@@ -104,16 +105,23 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const productData = {
+  
+    const matchingCategoryProduct = products.find(
+      (p) => p.category === formData.category && p.categoryId != null
+    );
+  
+    const categoryId = matchingCategoryProduct?.categoryId ?? null;
+  
+    const productData: Omit<Product, 'id'> = {
       name: formData.name,
       category: formData.category,
+      categoryId: formData.categoryId,
       price: parseFloat(formData.price),
-      stock: parseInt(formData.stock),
+      stock: parseInt(formData.stock, 10),
       barcode: formData.barcode,
-      minStock: parseInt(formData.minStock)
+      minStock: parseInt(formData.minStock, 10),
     };
-
+  
     try {
       if (editingProduct) {
         await onUpdateProduct(editingProduct.id, productData);
@@ -272,7 +280,14 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
               <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category}
-                onValueChange={(value: string) => setFormData({ ...formData, category: value })}
+                onValueChange={(value) => {
+                  const selected = categories.find(c => c.category_name === value);
+                  setFormData({
+                    ...formData,
+                    category: value,
+                    categoryId: selected?.category_id ?? null
+                  });
+                }}
               >
                 <SelectTrigger id="category">
                   <SelectValue placeholder="Select a category" />
