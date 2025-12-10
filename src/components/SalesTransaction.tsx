@@ -15,28 +15,10 @@ interface SalesTransactionProps {
 
 const CATEGORY_DATA = [
   {
-    name: 'Vegetables',
-    image: 'https://images.unsplash.com/photo-1574955598898-d105479382e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHZlZ2V0YWJsZXMlMjBhc3NvcnRlZHxlbnwxfHx8fDE3NjQzODQyODF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-green-100 to-green-200',
-    matchCategories: ['Fruits & Vegetables', 'Vegetables']
-  },
-  {
-    name: 'Fruits',
-    image: 'https://images.unsplash.com/photo-1731085906186-abc92cce0a7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cm9waWNhbCUyMGZydWl0cyUyMHZhcmlldHl8ZW58MXx8fHwxNzY0Mzg0MjgxfDA&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-yellow-100 to-yellow-200',
-    matchCategories: ['Fruits & Vegetables', 'Fruits']
-  },
-  {
-    name: 'Meats',
-    image: 'https://images.unsplash.com/photo-1677607219966-22fbfa433667?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyYXclMjBtZWF0JTIwYmVlZnxlbnwxfHx8fDE3NjQzNDY2NjR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-red-100 to-red-200',
-    matchCategories: ['Meat & Seafood', 'Meats']
-  },
-  {
-    name: 'Snacks',
-    image: 'https://images.unsplash.com/photo-1742972459942-aed536c720cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzbmFja3MlMjBjaGlwcyUyMHZhcmlldHl8ZW58MXx8fHwxNzY0Mzg0MjgzfDA&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-pink-100 to-pink-200',
-    matchCategories: ['Snacks']
+    name: 'Groceries',
+    image: 'https://images.unsplash.com/photo-1760612887290-62645e654eaf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYW5uZWQlMjBmb29kJTIwZ3JvY2VyaWVzfGVufDF8fHx8MTc2NDM4NDI4M3ww&ixlib=rb-4.1.0&q=80&w=1080',
+    bgColor: 'from-blue-100 to-blue-200',
+    matchCategories: ['Groceries']
   },
   {
     name: 'Beverages',
@@ -45,25 +27,55 @@ const CATEGORY_DATA = [
     matchCategories: ['Beverages']
   },
   {
-    name: 'Canned Goods',
-    image: 'https://images.unsplash.com/photo-1760612887290-62645e654eaf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYW5uZWQlMjBmb29kJTIwZ3JvY2VyaWVzfGVufDF8fHx8MTc2NDM4NDI4M3ww&ixlib=rb-4.1.0&q=80&w=1080',
+    name: 'Food',
+    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb29kJTIwbWVhbHN8ZW58MXx8fHwxNzY0Mzg0Mjg0fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    bgColor: 'from-orange-100 to-orange-200',
+    matchCategories: ['Food']
+  },
+  {
+    name: 'Snacks',
+    image: 'https://images.unsplash.com/photo-1742972459942-aed536c720cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzbmFja3MlMjBjaGlwcyUyMHZhcmlldHl8ZW58MXx8fHwxNzY0Mzg0MjgzfDA&ixlib=rb-4.1.0&q=80&w=1080',
+    bgColor: 'from-pink-100 to-pink-200',
+    matchCategories: ['Snacks']
+  },
+  {
+    name: 'Dairy',
+    image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYWlyeSUyMHByb2R1Y3RzfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
     bgColor: 'from-blue-100 to-blue-200',
-    matchCategories: ['Groceries', 'Food', 'Canned Goods']
+    matchCategories: ['Dairy']
   },
   {
-    name: 'Toiletries/Hygiene',
-    image: 'https://images.unsplash.com/photo-1760184762833-7c6bd9ef1415?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b2lsZXRyaWVzJTIwaHlnaWVuZSUyMHByb2R1Y3RzfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-purple-100 to-purple-200',
-    matchCategories: ['Personal Care', 'Toiletries']
+    name: 'Bakery',
+    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZHxlbnwxfHx8fDE3NjQzODQyODR8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    bgColor: 'from-yellow-100 to-yellow-200',
+    matchCategories: ['Bakery']
   },
   {
-    name: 'Medicines',
-    image: 'https://images.unsplash.com/photo-1646392206581-2527b1cae5cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2luZSUyMHBoYXJtYWN5JTIwcGlsbHN8ZW58MXx8fHwxNzY0MzEwMDExfDA&ixlib=rb-4.1.0&q=80&w=1080',
+    name: 'Frozen',
+    image: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcm96ZW4lMjBmb29kfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
     bgColor: 'from-indigo-100 to-indigo-200',
-    matchCategories: ['Medicines', 'Pharmacy']
+    matchCategories: ['Frozen']
   },
   {
-    name: 'Household Essentials',
+    name: 'Meat & Seafood',
+    image: 'https://images.unsplash.com/photo-1677607219966-22fbfa433667?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyYXclMjBtZWF0JTIwYmVlZnxlbnwxfHx8fDE3NjQzNDY2NjR8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    bgColor: 'from-red-100 to-red-200',
+    matchCategories: ['Meat & Seafood']
+  },
+  {
+    name: 'Fruits & Vegetables',
+    image: 'https://images.unsplash.com/photo-1574955598898-d105479382e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHZlZ2V0YWJsZXMlMjBhc3NvcnRlZHxlbnwxfHx8fDE3NjQzODQyODF8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    bgColor: 'from-green-100 to-green-200',
+    matchCategories: ['Fruits & Vegetables']
+  },
+  {
+    name: 'Personal Care',
+    image: 'https://greenchemfinder.com/wp-content/uploads/elementor/thumbs/AdobeStock_1255629662-scaled-r3ym4s0zkic1oaxp9cbgqnaedms7bd33llzxrbcr60.jpeg',
+    bgColor: 'from-purple-100 to-purple-200',
+    matchCategories: ['Personal Care']
+  },
+  {
+    name: 'Household',
     image: 'https://images.unsplash.com/photo-1758887262204-a49092d85f15?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjbGVhbmluZyUyMGhvdXNlaG9sZCUyMHByb2R1Y3RzfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
     bgColor: 'from-gray-100 to-gray-200',
     matchCategories: ['Household']
@@ -72,7 +84,13 @@ const CATEGORY_DATA = [
     name: 'Baby Products',
     image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWJ5JTIwcHJvZHVjdHMlMjBjYXJlfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
     bgColor: 'from-orange-100 to-orange-200',
-    matchCategories: ['Baby Products', 'Baby Care']
+    matchCategories: ['Baby Products']
+  },
+  {
+    name: 'Toiletries/Hygiene',
+    image: 'https://images.unsplash.com/photo-1760184762833-7c6bd9ef1415?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b2lsZXRyaWVzJTIwaHlnaWVuZSUyMHByb2R1Y3RzfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
+    bgColor: 'from-indigo-100 to-indigo-200',
+    matchCategories: ['Toiletries/Hygiene']
   }
 ];
 

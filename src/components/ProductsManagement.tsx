@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './ui/badge';
 import { Product } from '../App';
 import { Plus, Pencil, Search, FolderOpen, Tag, Trash2 } from 'lucide-react';
+import { fetchCategories, createCategory, deleteCategory, Category } from '../api/categories';
 
 type ProductFormData = {
   name: string;
@@ -46,7 +47,7 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -56,8 +57,40 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
     barcode: '',
     minStock: '1',
   });
-  
 
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const backendCategories = await fetchCategories();
+  
+        if (backendCategories.length > 0) {
+          setCategories(backendCategories);
+        } else {
+          // Fallback if DB is empty: seed from DEFAULT_CATEGORIES just in UI
+          setCategories(
+            DEFAULT_CATEGORIES.map((name, index) => ({
+              id: index + 1,
+              name,
+              imagePath: null,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Failed to load categories from backend:', error);
+        // Fallback to default list
+        setCategories(
+          DEFAULT_CATEGORIES.map((name, index) => ({
+            id: index + 1,
+            name,
+            imagePath: null,
+          }))
+        );
+      }
+    };
+  
+    loadCategories();
+  }, []);
+  
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,23 +101,44 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
     return matchesSearch && matchesCategory;
   });
 
-  const getCategoryCount = (category: string) => {
-    if (category === 'All') return products.length;
-    return products.filter(p => p.category === category).length;
+  const getCategoryCount = (categoryName: string) => {
+    if (categoryName === 'All') return products.length;
+    return products.filter(p => p.category === categoryName).length;
   };
-
-  const handleAddCategory = () => {
-    if (newCategoryName.trim() && !categories.includes(newCategoryName.trim())) {
-      setCategories([...categories, newCategoryName.trim()]);
+  
+  const handleAddCategory = async () => {
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+  
+    // Prevent duplicates (case-insensitive)
+    if (categories.some(c => c.name.toLowerCase() === trimmed.toLowerCase())) {
+      alert('Category already exists.');
+      return;
+    }
+  
+    try {
+      const newCat = await createCategory(trimmed);
+      setCategories(prev => [...prev, newCat]);
       setNewCategoryName('');
+    } catch (error) {
+      console.error('Failed to add category:', error);
+      alert('Failed to add category. Please try again.');
     }
   };
-
-  const handleDeleteCategory = (category: string) => {
-    if (confirm(`Delete category \"${category}\"? Products in this category will keep their category label.`)) {
-      setCategories(categories.filter(c => c !== category));
+  
+  const handleDeleteCategory = async (category: Category) => {
+    if (!confirm(`Delete category "${category.name}"? Products in this category will keep their category label.`)) {
+      return;
     }
-  };
+  
+    try {
+      await deleteCategory(category.id);
+      setCategories(prev => prev.filter(c => c.id !== category.id));
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+      alert('Failed to delete category. Please try again.');
+    }
+  };  
 
   const handleAdd = () => {
     setFormData({
@@ -201,18 +255,19 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
               All ({getCategoryCount('All')})
             </Badge>
             {categories.map(category => (
-              <Badge
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`cursor-pointer px-4 py-2 ${
-                  selectedCategory === category
-                    ? 'bg-[#4A7C3A] hover:bg-[#3D6B2F] text-white'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                }`}
-              >
-                {category} ({getCategoryCount(category)})
-              </Badge>
-            ))}
+            <Badge
+              key={category.id}
+              onClick={() => setSelectedCategory(category.name)}
+              className={`cursor-pointer px-4 py-2 ${
+                selectedCategory === category.name
+                  ? 'bg-[#4A7C3A] hover:bg-[#3D6B2F] text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+            >
+              {category.name} ({getCategoryCount(category.name)})
+            </Badge>
+          ))}
+
           </div>
         </CardContent>
       </Card>
@@ -319,8 +374,8 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                    <SelectItem key={category.id} value={category.name}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -438,22 +493,29 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
             {/* Category List */}
             <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
               {categories.map(category => (
-                <div key={category} className="flex items-center justify-between p-3 hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <Tag className="size-4 text-gray-400" />
-                    <span className="text-gray-900">{category}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {getCategoryCount(category)} products
-                    </Badge>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteCategory(category)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
+                <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
+                  {categories.map(category => (
+                    <div
+                      key={category.id}
+                      className="flex items-center justify-between p-3 hover:bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Tag className="size-4 text-gray-400" />
+                        <span className="text-gray-900">{category.name}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {getCategoryCount(category.name)} products
+                        </Badge>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteCategory(category)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
