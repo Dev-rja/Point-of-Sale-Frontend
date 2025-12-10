@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -6,6 +6,7 @@ import { User, Product, Sale, SaleItem } from '../App';
 import { Plus, Minus, Trash2, Search, ShoppingCart } from 'lucide-react';
 import { PaymentModal } from './PaymentModal';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { fetchCategories, Category } from '../api/categories';
 
 interface SalesTransactionProps {
   user: User;
@@ -13,6 +14,7 @@ interface SalesTransactionProps {
   onAddSale: (sale: any) => Promise<Sale>;
 }
 
+// 🔹 Your original hard-coded category visuals (kept as fallback)
 const CATEGORY_DATA = [
   {
     name: 'Groceries',
@@ -99,16 +101,33 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]); // from backend
 
+  // Load categories from backend
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const backendCategories = await fetchCategories(); // [{ id, name, imagePath }]
+        setCategories(backendCategories);
+      } catch (error) {
+        console.error('Failed to load categories for POS:', error);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  // Filter products by search + selected category
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.barcode.includes(searchTerm);
-    
+
     if (!selectedCategory) return matchesSearch;
-    
-    const categoryData = CATEGORY_DATA.find(cat => cat.name === selectedCategory);
-    const matchesCategory = categoryData?.matchCategories.includes(product.category) || false;
-    
+
+    // simple match: product.category must equal selectedCategory
+    const matchesCategory = product.category === selectedCategory;
+
     return matchesSearch && matchesCategory;
   });
 
@@ -166,13 +185,10 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
     setCart(cart.filter(item => item.productId !== productId));
   };
 
-  const clearCart = () => {
-    setCart([]);
-  };
+  const clearCart = () => setCart([]);
 
-  const calculateTotal = () => {
-    return cart.reduce((sum, item) => sum + item.subtotal, 0);
-  };
+  const calculateTotal = () =>
+    cart.reduce((sum, item) => sum + item.subtotal, 0);
 
   const handleCheckout = () => {
     if (cart.length === 0) {
@@ -239,7 +255,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                       <div className="text-sm text-gray-900 mb-1">{product.name}</div>
                       <div className="text-xs text-gray-500 mb-2">{product.category}</div>
                       <div className="flex justify-between items-center">
-                        <span className="text-[#1a5a1a]">₹{product.price.toFixed(2)}</span>
+                        <span className="text-[#1a5a1a]">₱{product.price.toFixed(2)}</span>
                         <span className={`text-xs ${product.stock <= product.minStock ? 'text-red-600' : 'text-gray-500'}`}>
                           Stock: {product.stock}
                         </span>
@@ -249,35 +265,72 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
-                  {selectedCategory ? `No products in ${selectedCategory}` : 'No products found'}
+                  {selectedCategory
+                    ? `No products in ${selectedCategory}`
+                    : 'No products found'}
                 </div>
               )}
             </div>
 
             {/* Category Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-              {CATEGORY_DATA.map(category => (
-                <button
-                  key={category.name}
-                  onClick={() => setSelectedCategory(selectedCategory === category.name ? null : category.name)}
-                  className={`relative overflow-hidden rounded-2xl p-4 transition-all hover:scale-105 ${
-                    selectedCategory === category.name ? 'ring-4 ring-[#4a9d5f]' : ''
-                  }`}
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${category.bgColor} opacity-80`}></div>
-                  <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-full h-20 mb-2 overflow-hidden rounded-lg">
-                      <ImageWithFallback
-                        src={category.image}
-                        alt={category.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <span className="text-xs text-gray-800 text-center">{category.name}</span>
+              {/* All Products card */}
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`relative overflow-hidden rounded-2xl p-4 transition-all hover:scale-105 ${
+                  selectedCategory === null ? 'ring-4 ring-[#4a9d5f]' : ''
+                }`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 opacity-80" />
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="w-full h-20 mb-2 flex items-center justify-center rounded-lg bg-white/70 text-gray-500 text-sm">
+                    All Products
                   </div>
-                </button>
-              ))}
+                  <span className="text-xs text-gray-800 text-center">All</span>
+                </div>
+              </button>
+
+              {/* Real categories */}
+              {CATEGORY_DATA.map((category) => {
+                // Find matching backend category to see if it has a custom image
+                const backendCat = categories.find((c) => c.name === category.name);
+
+                // Build image URL:
+                // image from DB if exists, else fallback to hard-coded one
+                const imageSrc = backendCat?.imagePath
+                  ? `${import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:5000"}/static/uploads/${backendCat.imagePath}`
+                  : category.image;
+
+                return (
+                  <button
+                    key={category.name}
+                    onClick={() =>
+                      setSelectedCategory(
+                        selectedCategory === category.name ? null : category.name
+                      )
+                    }
+                    className={`relative overflow-hidden rounded-2xl p-4 transition-all hover:scale-105 ${
+                      selectedCategory === category.name ? 'ring-4 ring-[#4a9d5f]' : ''
+                    }`}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${category.bgColor} opacity-80`} />
+                    <div className="relative z-10 flex flex-col items-center">
+                      <div className="w-full h-20 mb-2 overflow-hidden rounded-lg">
+                        <ImageWithFallback
+                          src={imageSrc}
+                          alt={category.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <span className="text-xs text-gray-800 text-center">
+                        {category.name}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
+
           </CardContent>
         </Card>
       </div>
@@ -311,7 +364,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
                           <div className="text-sm text-gray-900">{item.productName}</div>
-                          <div className="text-xs text-gray-500">₹{item.price.toFixed(2)} each</div>
+                          <div className="text-xs text-gray-500">₱{item.price.toFixed(2)} each</div>
                         </div>
                         <Button
                           variant="ghost"
@@ -345,7 +398,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                           </Button>
                         </div>
                         <div className="text-sm text-[#1a5a1a]">
-                        ₹{item.subtotal.toFixed(2)}
+                          ₱{item.subtotal.toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -356,7 +409,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-900">Total</span>
                     <span className="text-2xl text-[#1a5a1a]">
-                    ₹{calculateTotal().toFixed(2)}
+                      ₱{calculateTotal().toFixed(2)}
                     </span>
                   </div>
                   

@@ -7,42 +7,41 @@ export interface Category {
   imagePath: string | null;
 }
 
-// Match your Flask /categories GET response
-interface BackendCategory {
-  category_id: number;
-  category_name: string;
-  image_path: string | null;
-}
-
-// Load categories from Flask
+// GET /categories  (Flask returns: category_id, category_name, image_path, ...)
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await api.get<BackendCategory[]>("/categories");
-  return res.data.map(c => ({
+  const res = await api.get("/categories");
+  return res.data.map((c: any) => ({
     id: c.category_id,
     name: c.category_name,
     imagePath: c.image_path ?? null,
   }));
 }
 
-// Add new category (uses /api/add_category which expects form field "name")
-export async function createCategory(name: string): Promise<Category> {
+// POST /api/add_category  (multipart form: name + optional image)
+export async function createCategory(
+  name: string,
+  imageFile?: File | null   // ← imageFile is OPTIONAL
+): Promise<Category> {
   const formData = new FormData();
   formData.append("name", name);
+  if (imageFile) {
+    formData.append("image", imageFile);
+  }
 
   const res = await api.post("/api/add_category", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
-  // Response: { category_id, image_path, ... }
-  const data = res.data;
+  const { category_id, image_path } = res.data;
+
   return {
-    id: data.category_id,
+    id: category_id,
     name,
-    imagePath: data.image_path ?? null,
+    imagePath: image_path ?? null,
   };
 }
 
-// Delete category
+// DELETE /api/categories/<id>
 export async function deleteCategory(id: number): Promise<void> {
   await api.delete(`/api/categories/${id}`);
 }

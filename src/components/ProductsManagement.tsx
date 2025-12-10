@@ -41,14 +41,22 @@ const DEFAULT_CATEGORIES = [
   'Other'
 ];
 
-export function ProductsManagement({ products, onUpdateProducts, onAddProduct, onUpdateProduct }: ProductsManagementProps) {
+export function ProductsManagement({
+  products,
+  onUpdateProducts,
+  onAddProduct,
+  onUpdateProduct
+}: ProductsManagementProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryImage, setNewCategoryImage] = useState<File | null>(null);
+
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     category: '',
@@ -58,11 +66,12 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
     minStock: '1',
   });
 
+  // Load categories from backend (with fallback to defaults)
   useEffect(() => {
     const loadCategories = async () => {
       try {
         const backendCategories = await fetchCategories();
-  
+
         if (backendCategories.length > 0) {
           setCategories(backendCategories);
         } else {
@@ -87,17 +96,20 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
         );
       }
     };
-  
+
     loadCategories();
   }, []);
-  
+
+  // Filter products by search & category
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.barcode.includes(searchTerm);
-    
-    const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
-    
+
+    const matchesCategory =
+      selectedCategory === 'All' || product.category === selectedCategory;
+
     return matchesSearch && matchesCategory;
   });
 
@@ -105,32 +117,16 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
     if (categoryName === 'All') return products.length;
     return products.filter(p => p.category === categoryName).length;
   };
-  
-  const handleAddCategory = async () => {
-    const trimmed = newCategoryName.trim();
-    if (!trimmed) return;
-  
-    // Prevent duplicates (case-insensitive)
-    if (categories.some(c => c.name.toLowerCase() === trimmed.toLowerCase())) {
-      alert('Category already exists.');
-      return;
-    }
-  
-    try {
-      const newCat = await createCategory(trimmed);
-      setCategories(prev => [...prev, newCat]);
-      setNewCategoryName('');
-    } catch (error) {
-      console.error('Failed to add category:', error);
-      alert('Failed to add category. Please try again.');
-    }
-  };
-  
+
   const handleDeleteCategory = async (category: Category) => {
-    if (!confirm(`Delete category "${category.name}"? Products in this category will keep their category label.`)) {
+    if (
+      !confirm(
+        `Delete category "${category.name}"? Products in this category will keep their category label.`
+      )
+    ) {
       return;
     }
-  
+
     try {
       await deleteCategory(category.id);
       setCategories(prev => prev.filter(c => c.id !== category.id));
@@ -138,7 +134,7 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
       console.error('Failed to delete category:', error);
       alert('Failed to delete category. Please try again.');
     }
-  };  
+  };
 
   const handleAdd = () => {
     setFormData({
@@ -152,7 +148,6 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
     setEditingProduct(null);
     setShowAddDialog(true);
   };
-  
 
   const handleEdit = (product: Product) => {
     setFormData({
@@ -165,29 +160,25 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
     });
     setEditingProduct(product);
     setShowAddDialog(true);
-  };  
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
-    const matchingCategoryProduct = products.find(
-      (p) => p.category === formData.category && p.categoryId != null
-    );
-  
-    const categoryId = matchingCategoryProduct?.categoryId ?? null;
+
     const trimmedBarcode = formData.barcode.trim();
 
-    const isDuplicateBarcode = products.some(p =>
-      p.barcode &&
-      p.barcode === trimmedBarcode &&
-      (!editingProduct || p.id !== editingProduct.id)
+    const isDuplicateBarcode = products.some(
+      p =>
+        p.barcode &&
+        p.barcode === trimmedBarcode &&
+        (!editingProduct || p.id !== editingProduct.id)
     );
-  
+
     if (trimmedBarcode && isDuplicateBarcode) {
       alert('Barcode already exists. Please use a different barcode.');
       return;
     }
-  
+
     const productData: Omit<Product, 'id'> = {
       name: formData.name,
       category: formData.category,
@@ -196,7 +187,7 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
       barcode: trimmedBarcode,
       minStock: parseInt(formData.minStock, 10),
     };
-  
+
     try {
       if (editingProduct) {
         await onUpdateProduct(editingProduct.id, productData);
@@ -205,14 +196,37 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
       }
       setShowAddDialog(false);
     } catch (error: any) {
-      console.error("Failed to save product:", error);
-  
+      console.error('Failed to save product:', error);
+
       const message =
         (error instanceof Error && error.message) ||
         error?.response?.data?.error ||
-        "Failed to save product. Please try again.";
-  
+        'Failed to save product. Please try again.';
+
       alert(message);
+    }
+  };
+
+  // Add category with optional image
+  const handleAddCategoryClick = async () => {
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+
+    // Prevent duplicates (case-insensitive)
+    if (categories.some(c => c.name.toLowerCase() === trimmed.toLowerCase())) {
+      alert('Category already exists.');
+      return;
+    }
+
+    try {
+      // createCategory is assumed to be (name: string, imageFile?: File | null)
+      const created = await createCategory(trimmed, newCategoryImage);
+      setCategories(prev => [...prev, created]);
+      setNewCategoryName('');
+      setNewCategoryImage(null);
+    } catch (err) {
+      console.error('Failed to create category:', err);
+      alert('Failed to create category. Please try again.');
     }
   };
 
@@ -222,14 +236,23 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl text-[#1a5a1a]">Products Management</h2>
-          <p className="text-[#5B7A4A] mt-1">Manage your product catalog and categories</p>
+          <p className="text-[#5B7A4A] mt-1">
+            Manage your product catalog and categories
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowCategoryDialog(true)} variant="outline" className="border-[#D1EDC5]">
+          <Button
+            onClick={() => setShowCategoryDialog(true)}
+            variant="outline"
+            className="border-[#D1EDC5]"
+          >
             <Tag className="size-4 mr-2" />
             Manage Categories
           </Button>
-          <Button onClick={handleAdd} className="bg-gradient-to-r from-[#4A7C3A] to-[#5B8A47] hover:from-[#3D6B2F] hover:to-[#4A7C3A] text-white">
+          <Button
+            onClick={handleAdd}
+            className="bg-gradient-to-r from-[#4A7C3A] to-[#5B8A47] hover:from-[#3D6B2F] hover:to-[#4A7C3A] text-white"
+          >
             <Plus className="size-4 mr-2" />
             Add Product
           </Button>
@@ -255,19 +278,18 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
               All ({getCategoryCount('All')})
             </Badge>
             {categories.map(category => (
-            <Badge
-              key={category.id}
-              onClick={() => setSelectedCategory(category.name)}
-              className={`cursor-pointer px-4 py-2 ${
-                selectedCategory === category.name
-                  ? 'bg-[#4A7C3A] hover:bg-[#3D6B2F] text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-            >
-              {category.name} ({getCategoryCount(category.name)})
-            </Badge>
-          ))}
-
+              <Badge
+                key={category.id}
+                onClick={() => setSelectedCategory(category.name)}
+                className={`cursor-pointer px-4 py-2 ${
+                  selectedCategory === category.name
+                    ? 'bg-[#4A7C3A] hover:bg-[#3D6B2F] text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                }`}
+              >
+                {category.name} ({getCategoryCount(category.name)})
+              </Badge>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -281,7 +303,7 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
               type="text"
               placeholder="Search products by name, category, or barcode..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="pl-10 border-[#D1EDC5]"
             />
           </div>
@@ -291,7 +313,9 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
       {/* Products Table */}
       <Card className="border-[#D1EDC5] shadow-sm">
         <CardHeader className="bg-gradient-to-r from-[#f0f9ed] to-white border-b border-[#D1EDC5]">
-          <CardTitle className="text-[#1a5a1a]">Products ({filteredProducts.length})</CardTitle>
+          <CardTitle className="text-[#1a5a1a]">
+            Products ({filteredProducts.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -307,11 +331,20 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
               </thead>
               <tbody>
                 {filteredProducts.map(product => (
-                  <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr
+                    key={product.id}
+                    className="border-b border-gray-100 hover:bg-gray-50"
+                  >
                     <td className="py-3 px-4 text-gray-900">{product.name}</td>
-                    <td className="py-3 px-4 text-gray-600">{product.category}</td>
-                    <td className="py-3 px-4 text-right text-gray-900">₹{product.price.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-gray-600">{product.barcode}</td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {product.category}
+                    </td>
+                    <td className="py-3 px-4 text-right text-gray-900">
+                      ₹{product.price.toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {product.barcode}
+                    </td>
                     <td className="py-3 px-4 text-center">
                       <Button
                         variant="ghost"
@@ -340,9 +373,13 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+            <DialogTitle>
+              {editingProduct ? 'Edit Product' : 'Add New Product'}
+            </DialogTitle>
             <DialogDescription>
-              {editingProduct ? 'Update product information below.' : 'Enter product details to add to inventory.'}
+              {editingProduct
+                ? 'Update product information below.'
+                : 'Enter product details to add to inventory.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -353,19 +390,21 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
                 id="name"
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 required
               />
             </div>
 
             <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value: string) => {
                   setFormData(prev => ({
                     ...prev,
-                    category: value
+                    category: value,
                   }));
                 }}
               >
@@ -391,7 +430,9 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
                   step="0.01"
                   min="0"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, price: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -403,7 +444,9 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
                   type="number"
                   min="0"
                   value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, stock: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -416,43 +459,56 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
                   id="barcode"
                   type="text"
                   value={formData.barcode}
-                  onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, barcode: e.target.value })
+                  }
                   required
                 />
               </div>
 
               <div className="space-y-2">
-              <Label htmlFor="minStock">Min Stock Level</Label>
+                <Label htmlFor="minStock">Min Stock Level</Label>
                 <Input
                   id="minStock"
                   type="number"
                   min={1}
                   value={formData.minStock}
-                  onChange={(e) => {
+                  onChange={e => {
                     const raw = e.target.value;
 
-                    // allow temporary empty while typing
                     if (raw === '') {
                       setFormData({ ...formData, minStock: '1' });
                       return;
                     }
 
                     const num = Number(raw);
-                    const clamped = Number.isNaN(num) ? 1 : Math.max(1, num);
+                    const clamped = Number.isNaN(num)
+                      ? 1
+                      : Math.max(1, num);
 
-                    setFormData({ ...formData, minStock: String(clamped) });
+                    setFormData({
+                      ...formData,
+                      minStock: String(clamped),
+                    });
                   }}
                   required
                 />
-
               </div>
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)} className="flex-1">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAddDialog(false)}
+                className="flex-1"
+              >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1 bg-[#4A7C3A] hover:bg-[#3D6B2F]">
+              <Button
+                type="submit"
+                className="flex-1 bg-[#4A7C3A] hover:bg-[#3D6B2F]"
+              >
                 {editingProduct ? 'Update' : 'Add'} Product
               </Button>
             </div>
@@ -470,58 +526,94 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Add New Category */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter new category name"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddCategory();
-                  }
-                }}
-              />
-              <Button onClick={handleAddCategory} className="bg-[#4A7C3A] hover:bg-[#3D6B2F] text-white">
-                <Plus className="size-4 mr-2" />
-                Add
-              </Button>
+          {/* Add New Category */}
+          <div className="space-y-3">
+            {/* Wrapper for inputs */}
+            <div className="flex flex-col gap-7">
+
+              {/* Name input + Add button */}
+              <div className="flex w-full gap-2">
+                <Input
+                  placeholder="Enter new category name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="
+                    flex-1 h-10
+                    rounded-l-md
+                    border border-[#4A7C3A]
+                  "
+                />
+
+                <Button
+                  type="button"
+                  onClick={handleAddCategoryClick}
+                  className="
+                    h-10 px-6
+                    rounded-r-md
+                    bg-[#4A7C3A] hover:bg-[#3D6B2F]
+                    text-white
+                  "
+                >
+                  <Plus className="size-4 mr-2" />
+                  Add
+                </Button>
+              </div>
+
+
+              {/* Image Picker under the field */}
+              <div className="flex items-center gap-2 w-48 mt-4">
+                <Label className="text-xs text-gray-600 mb-1">
+                  Image (optional)
+                </Label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setNewCategoryImage(e.target.files?.[0] ?? null)}
+                  className="
+                    text-xs text-gray-700
+                    rounded-md border border-gray-300
+                    file:mr-3 file:py-1.5 file:px-3
+                    file:rounded-md file:border-0
+                    file:bg-[#4A7C3A] file:text-white
+                    hover:file:bg-[#3D6B2F]
+                  "
+                />
+              </div>
+
             </div>
+
 
             {/* Category List */}
             <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
               {categories.map(category => (
-                <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
-                  {categories.map(category => (
-                    <div
-                      key={category.id}
-                      className="flex items-center justify-between p-3 hover:bg-gray-50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Tag className="size-4 text-gray-400" />
-                        <span className="text-gray-900">{category.name}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {getCategoryCount(category.name)} products
-                        </Badge>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteCategory(category)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  ))}
+                <div
+                  key={category.id}
+                  className="flex items-center justify-between p-3 hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <Tag className="size-4 text-gray-400" />
+                    <span className="text-gray-900">{category.name}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {getCategoryCount(category.name)} products
+                    </Badge>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteCategory(category)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
                 </div>
               ))}
             </div>
 
             <div className="flex justify-end pt-4">
-              <Button onClick={() => setShowCategoryDialog(false)} variant="outline">
+              <Button
+                onClick={() => setShowCategoryDialog(false)}
+                variant="outline"
+              >
                 Close
               </Button>
             </div>
