@@ -37,16 +37,20 @@ export async function fetchProducts(): Promise<Product[]> {
 }
 
 // Add new product
-export async function createProduct(input: Omit<Product, "id">): Promise<void> {
-  await api.post("/products", {
-    product_name: input.name,
-    price: input.price,
-    stock_quantity: input.stock,
-    unit: "pcs",
-    // Later: send category_id when you connect real categories table
-  });
-}
-
+export async function createProduct(
+    input: Omit<Product, "id">,
+    createdBy?: string
+  ): Promise<void> {
+    await api.post("/products", {
+      product_name: input.name,
+      price: input.price,
+      stock_quantity: input.stock,
+      unit: "pcs",
+      created_by: createdBy ?? "Unknown",
+      // // Later: send category_id when you connect real categories table
+    });
+  }
+  
 // Edit product
 export async function updateProduct(
   id: string,

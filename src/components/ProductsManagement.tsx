@@ -272,7 +272,7 @@ export function ProductsManagement({ products, onUpdateProducts, onAddProduct, o
               <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                onValueChange={(value: string) => setFormData({ ...formData, category: value })}
               >
                 <SelectTrigger id="category">
                   <SelectValue placeholder="Select a category" />

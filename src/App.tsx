@@ -160,7 +160,7 @@ function App() {
   const handleAddProduct = async (product: Omit<Product, 'id'>) => {
     try {
       // Create in Flask
-      await createProduct(product);
+      await createProduct(product, currentUser?.username || "Unknown");
       // Reload from backend to get real IDs / values
       const productsData = await fetchProducts();
       setProducts(productsData);

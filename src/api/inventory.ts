@@ -16,7 +16,8 @@ export interface InventoryLog {
   change_type: MovementType | string;
   quantity_change: number;
   remarks: string;
-  date_time: string; // ISO datetime
+  date_time: string;
+  current_stock?: number | null;
 }
 
 // GET /inventory

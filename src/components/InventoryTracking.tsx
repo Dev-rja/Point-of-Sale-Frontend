@@ -65,26 +65,29 @@ type MovementTypeFilter =
 type MovementType = 'adjustment' | 'purchase' | 'return' | 'damage';
 
   function mapLogToMovement(log: InventoryLog): InventoryMovement {
+    // 1) Determine movement type based on change_type text
     let movementType: MovementTypeFilter = 'adjustment';
     const t = log.change_type.toLowerCase();
-  
+
     if (t.includes('sale')) movementType = 'sale';
     else if (t.includes('purchase')) movementType = 'purchase';
     else if (t.includes('return')) movementType = 'return';
     else if (t.includes('damage')) movementType = 'damage';
     else if (t.includes('initial')) movementType = 'initial';
     else if (t.includes('adjust')) movementType = 'adjustment';
-  
+
+    // 2) Parse remarks into reason / notes / userName
     let rawRemarks = log.remarks || '';
     let reason: string | undefined;
     let notes: string | undefined;
     let userName: string | undefined;
-  
+
     if (rawRemarks) {
       const parts = rawRemarks.split('|').map((s) => s.trim());
-  
+
       for (const part of parts) {
         const lower = part.toLowerCase();
+
         if (lower.startsWith('reason:')) {
           reason = part.slice('reason:'.length).trim();
         } else if (lower.startsWith('notes:')) {
@@ -92,25 +95,28 @@ type MovementType = 'adjustment' | 'purchase' | 'return' | 'damage';
         } else if (lower.startsWith('by:')) {
           userName = part.slice('by:'.length).trim();
         } else if (!reason) {
-          // fallback for old data like "damage" without "Reason:" prefix
+          // fallback for old logs like "damage" with no "Reason:" prefix
           reason = part;
         }
       }
     }
-  
-    // --- BEFORE / AFTER using current_stock from backend ---
-    let quantityAfter: number | undefined;
+
+    // 3) BEFORE / AFTER using current_stock and special-case Initial Stock
     let quantityBefore: number | undefined;
-  
-    if (
-      typeof (log as any).current_stock === 'number' &&
-      !Number.isNaN((log as any).current_stock)
+    let quantityAfter: number | undefined;
+
+    if (movementType === 'initial') {
+      // Initial Stock: before = 0, after = quantity_change
+      quantityBefore = 0;
+      quantityAfter = log.quantity_change;
+    } else if (
+      typeof log.current_stock === 'number' &&
+      !Number.isNaN(log.current_stock)
     ) {
-      const currentStock = (log as any).current_stock as number;
-      quantityAfter = currentStock;
-      quantityBefore = currentStock - log.quantity_change;
+      quantityAfter = log.current_stock;                        // AFTER
+      quantityBefore = log.current_stock - log.quantity_change; // BEFORE = after - change
     }
-  
+
     return {
       id: String(log.log_id),
       productId: String(log.product_id),
@@ -128,7 +134,7 @@ type MovementType = 'adjustment' | 'purchase' | 'return' | 'damage';
       timestamp: new Date(log.date_time),
     };
   }
-  
+
 
 export function InventoryTracking({
   products,
