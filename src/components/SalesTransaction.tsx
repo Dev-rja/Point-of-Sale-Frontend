@@ -1,198 +1,286 @@
-import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { User, Product, Sale, SaleItem } from '../App';
-import { Plus, Minus, Trash2, Search, ShoppingCart } from 'lucide-react';
-import { PaymentModal } from './PaymentModal';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import { fetchCategories, Category } from '../api/categories';
+// SalesTransaction.tsx
+import React, { useState, useMemo } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { User, Product, Sale, SaleItem } from "../App";
+import { Plus, Minus, Trash2, Search, ShoppingCart } from "lucide-react";
+import { PaymentModal } from "./PaymentModal";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
+
+// Optional Category type (minimal)
+export interface Category {
+  id: number | string;
+  name: string;
+  imagePath?: string | null; // backend-stored filename if uploaded
+}
 
 interface SalesTransactionProps {
   user: User;
   products: Product[];
   onAddSale: (sale: any) => Promise<Sale>;
+  // optional categories passed from parent (backend-driven)
+  categories?: Category[];
 }
 
-// 🔹 Your original hard-coded category visuals (kept as fallback)
+function normalizeCategoryName(name: string) {
+  return name
+    .replace(/\s*&\s*/g, " & ")       // normalize "&"
+    .replace(/\s*\/\s*/g, "/")        // normalize "/"
+    .replace(/\s+/g, " ")             // collapse spaces
+    .replace(/\s+/g, "")              // remove all spaces
+    .trim();
+}
+
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  groceries: "from-blue-100 to-blue-200",
+  beverages: "from-amber-100 to-amber-200",
+  food: "from-orange-100 to-orange-200",
+  snacks: "from-pink-100 to-pink-200",
+
+  dairy: "from-green-100 to-green-200",
+  frozen: "from-blue-100 to-blue-200",
+  bakery: "from-yellow-100 to-yellow-200",
+
+  // Must match normalizeCategoryName() EXACTLY
+  "meat&seafood": "from-red-100 to-red-200",
+  "fruits&vegetables": "from-green-100 to-green-200",
+
+  personalcare: "from-purple-100 to-purple-200",
+  household: "from-pink-100 to-pink-200",
+  babyproducts: "from-orange-100 to-orange-200",
+  "toiletries/hygiene": "from-indigo-100 to-indigo-200",
+
+  // All Products FIX
+  allproducts: "from-gray-100 to-gray-200",
+
+  // fallback
+  other: "from-gray-100 to-gray-200",
+};
+
+
+const DEFAULT_GRADIENT = "from-gray-100 to-gray-200";
+
+// --- Hard-coded category data + images (your original online links) ---
 const CATEGORY_DATA = [
   {
-    name: 'Groceries',
-    image: 'https://images.unsplash.com/photo-1760612887290-62645e654eaf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYW5uZWQlMjBmb29kJTIwZ3JvY2VyaWVzfGVufDF8fHx8MTc2NDM4NDI4M3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-blue-100 to-blue-200',
-    matchCategories: ['Groceries']
+    name: "Groceries",
+    image:
+      "https://images.unsplash.com/photo-1760612887290-62645e654eaf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYW5uZWQlMjBmb29kJTIwZ3JvY2VyaWVzfGVufDF8fHx8MTc2NDM4NDI4M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-blue-100 to-blue-200",
+    matchCategories: ["Groceries"],
   },
   {
-    name: 'Beverages',
-    image: 'https://images.unsplash.com/photo-1636245297990-c641560ff4b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZXZlcmFnZXMlMjBkcmlua3MlMjBib3R0bGVzfGVufDF8fHx8MTc2NDMzMjgxMXww&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-amber-100 to-amber-200',
-    matchCategories: ['Beverages']
+    name: "Beverages",
+    image:
+      "https://images.unsplash.com/photo-1636245297990-c641560ff4b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZXZlcmFnZXMlMjBkcmlua3MlMjBib3R0bGVzfGVufDF8fHx8MTc2NDMzMjgxMXww&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-amber-100 to-amber-200",
+    matchCategories: ["Beverages"],
   },
   {
-    name: 'Food',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb29kJTIwbWVhbHN8ZW58MXx8fHwxNzY0Mzg0Mjg0fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-orange-100 to-orange-200',
-    matchCategories: ['Food']
+    name: "Food",
+    image:
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb29kJTIwbWVhbHN8ZW58MXx8fHwxNzY0Mzg0Mjg0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-orange-100 to-orange-200",
+    matchCategories: ["Food"],
   },
   {
-    name: 'Snacks',
-    image: 'https://images.unsplash.com/photo-1742972459942-aed536c720cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzbmFja3MlMjBjaGlwcyUyMHZhcmlldHl8ZW58MXx8fHwxNzY0Mzg0MjgzfDA&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-pink-100 to-pink-200',
-    matchCategories: ['Snacks']
+    name: "Snacks",
+    image:
+      "https://images.unsplash.com/photo-1742972459942-aed536c720cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzbmFja3MlMjBjaGlwcyUyMHZhcmlldHl8ZW58MXx8fHwxNzY0Mzg0MjgzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-pink-100 to-pink-200",
+    matchCategories: ["Snacks"],
   },
   {
-    name: 'Dairy',
-    image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYWlyeSUyMHByb2R1Y3RzfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-blue-100 to-blue-200',
-    matchCategories: ['Dairy']
+    name: "Dairy",
+    image:
+      "https://images.unsplash.com/photo-1628088062854-d1870b4553da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYWlyeSUyMHByb2R1Y3RzfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-green-100 to-green-200",
+    matchCategories: ["Dairy"],
   },
   {
-    name: 'Bakery',
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZHxlbnwxfHx8fDE3NjQzODQyODR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-yellow-100 to-yellow-200',
-    matchCategories: ['Bakery']
+    name: "Bakery",
+    image:
+      "https://images.unsplash.com/photo-1509440159596-0249088772ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZHxlbnwxfHx8fDE3NjQzODQyODR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-yellow-100 to-yellow-200",
+    matchCategories: ["Bakery"],
   },
   {
-    name: 'Frozen',
-    image: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcm96ZW4lMjBmb29kfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-indigo-100 to-indigo-200',
-    matchCategories: ['Frozen']
+    name: "Frozen",
+    image:
+      "https://images.unsplash.com/photo-1606787366850-de6330128bfc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcm96ZW4lMjBmb29kfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-blue-100 to-blue-200",
+    matchCategories: ["Frozen"],
   },
   {
-    name: 'Meat & Seafood',
-    image: 'https://images.unsplash.com/photo-1677607219966-22fbfa433667?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyYXclMjBtZWF0JTIwYmVlZnxlbnwxfHx8fDE3NjQzNDY2NjR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-red-100 to-red-200',
-    matchCategories: ['Meat & Seafood']
+    name: "Meat & Seafood",
+    image:
+      "https://images.unsplash.com/photo-1677607219966-22fbfa433667?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyYXclMjBtZWF0JTIwYmVlZnxlbnwxfHx8fDE3NjQzNDY2NjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-red-100 to-red-200",
+    matchCategories: ["Meat & Seafood"],
   },
   {
-    name: 'Fruits & Vegetables',
-    image: 'https://images.unsplash.com/photo-1574955598898-d105479382e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHZlZ2V0YWJsZXMlMjBhc3NvcnRlZHxlbnwxfHx8fDE3NjQzODQyODF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-green-100 to-green-200',
-    matchCategories: ['Fruits & Vegetables']
+    name: "Fruits & Vegetables",
+    image:
+      "https://images.unsplash.com/photo-1574955598898-d105479382e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHZlZ2V0YWJsZXMlMjBhc3NvcnRlZHxlbnwxfHx8fDE3NjQzODQyODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-green-100 to-green-200",
+    matchCategories: ["Fruits & Vegetables"],
   },
   {
-    name: 'Personal Care',
-    image: 'https://greenchemfinder.com/wp-content/uploads/elementor/thumbs/AdobeStock_1255629662-scaled-r3ym4s0zkic1oaxp9cbgqnaedms7bd33llzxrbcr60.jpeg',
-    bgColor: 'from-purple-100 to-purple-200',
-    matchCategories: ['Personal Care']
+    name: "Personal Care",
+    image:
+      "https://greenchemfinder.com/wp-content/uploads/elementor/thumbs/AdobeStock_1255629662-scaled-r3ym4s0zkic1oaxp9cbgqnaedms7bd33llzxrbcr60.jpeg",
+    bgColor: "from-purple-100 to-purple-200",
+    matchCategories: ["Personal Care"],
   },
   {
-    name: 'Household',
-    image: 'https://images.unsplash.com/photo-1758887262204-a49092d85f15?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjbGVhbmluZyUyMGhvdXNlaG9sZCUyMHByb2R1Y3RzfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-gray-100 to-gray-200',
-    matchCategories: ['Household']
+    name: "Household",
+    image:
+      "https://images.unsplash.com/photo-1758887262204-a49092d85f15?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjbGVhbmluZyUyMGhvdXNlaG9sZCUyMHByb2R1Y3RzfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-pink-100 to-pink-200",
+    matchCategories: ["Household"],
   },
   {
-    name: 'Baby Products',
-    image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWJ5JTIwcHJvZHVjdHMlMjBjYXJlfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-orange-100 to-orange-200',
-    matchCategories: ['Baby Products']
+    name: "Baby Products",
+    image:
+      "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWJ5JTIwcHJvZHVjdHMlMjBjYXJlfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-orange-100 to-orange-200",
+    matchCategories: ["Baby Products"],
   },
   {
-    name: 'Toiletries/Hygiene',
-    image: 'https://images.unsplash.com/photo-1760184762833-7c6bd9ef1415?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b2lsZXRyaWVzJTIwaHlnaWVuZSUyMHByb2R1Y3RzfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080',
-    bgColor: 'from-indigo-100 to-indigo-200',
-    matchCategories: ['Toiletries/Hygiene']
-  }
+    name: "Toiletries/Hygiene",
+    image:
+      "https://images.unsplash.com/photo-1760184762833-7c6bd9ef1415?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b2lsZXRyaWVzJTIwaHlnaWVuZSUyMHByb2R1Y3RzfGVufDF8fHx8MTc2NDM4NDI4NHww&ixlib=rb-4.1.0&q=80&w=1080",
+    bgColor: "from-indigo-100 to-indigo-200",
+    matchCategories: ["Toiletries/Hygiene"],
+  },
 ];
 
-export function SalesTransaction({ user, products, onAddSale }: SalesTransactionProps) {
+const FALLBACK_IMAGE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect width='100%25' height='100%25' fill='%23eef2e7'/%3E%3Ctext x='50%25' y='50%25' fill='%2390a88a' font-family='Arial' font-size='20' text-anchor='middle' alignment-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
+
+  const BACKEND_URL = (
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"
+  ).replace(/\/$/, "");
+  
+
+// build a name => image mapping for quick fallback lookup
+const CATEGORY_IMAGES: Record<string, string> = {};
+CATEGORY_DATA.forEach((c) => {
+  CATEGORY_IMAGES[c.name] = c.image;
+});
+
+export function SalesTransaction({
+  user,
+  products,
+  onAddSale,
+  categories: backendCategories,
+}: SalesTransactionProps) {
   const [cart, setCart] = useState<SaleItem[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]); // from backend
 
-  // Load categories from backend
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const backendCategories = await fetchCategories(); // [{ id, name, imagePath }]
-        setCategories(backendCategories);
-      } catch (error) {
-        console.error('Failed to load categories for POS:', error);
-      }
-    };
+  // Use backend categories if provided, otherwise use CATEGORY_DATA as categories list
+  // Normalize into { id, name, imagePath? } shape
+  const categories = useMemo(() => {
+    if (backendCategories && backendCategories.length > 0) {
+      return backendCategories;
+    }
+    // build from CATEGORY_DATA
+    return CATEGORY_DATA.map((c, idx) => ({
+      id: `hc-${idx}`,
+      name: c.name,
+      imagePath: null,
+    }));
+  }, [backendCategories]);
 
-    loadCategories();
-  }, []);
-
-  // Filter products by search + selected category
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.barcode.includes(searchTerm);
 
     if (!selectedCategory) return matchesSearch;
 
-    // simple match: product.category must equal selectedCategory
-    const matchesCategory = product.category === selectedCategory;
+    // if selectedCategory is "All", allow everything
+    if (selectedCategory === "All") return matchesSearch;
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && product.category === selectedCategory;
   });
 
   const addToCart = (product: Product) => {
     if (product.stock <= 0) {
-      alert('Product out of stock!');
+      alert("Product out of stock!");
       return;
     }
 
-    const existingItem = cart.find(item => item.productId === product.id);
+    const existingItem = cart.find((item) => item.productId === product.id);
     if (existingItem) {
       if (existingItem.quantity >= product.stock) {
-        alert('Not enough stock available!');
+        alert("Not enough stock available!");
         return;
       }
-      setCart(cart.map(item =>
-        item.productId === product.id
-          ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
-          : item
-      ));
+      setCart(
+        cart.map((item) =>
+          item.productId === product.id
+            ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
+            : item
+        )
+      );
     } else {
-      setCart([...cart, {
-        productId: product.id,
-        productName: product.name,
-        quantity: 1,
-        price: product.price,
-        subtotal: product.price
-      }]);
+      setCart([
+        ...cart,
+        {
+          productId: product.id,
+          productName: product.name,
+          quantity: 1,
+          price: product.price,
+          subtotal: product.price,
+        },
+      ]);
     }
   };
 
   const updateQuantity = (productId: string, change: number) => {
-    const product = products.find(p => p.id === productId);
+    const product = products.find((p) => p.id === productId);
     if (!product) return;
 
-    setCart(cart.map(item => {
-      if (item.productId === productId) {
-        const newQuantity = item.quantity + change;
-        if (newQuantity <= 0) return item;
-        if (newQuantity > product.stock) {
-          alert('Not enough stock available!');
-          return item;
+    setCart(
+      cart.map((item) => {
+        if (item.productId === productId) {
+          const newQuantity = item.quantity + change;
+          if (newQuantity <= 0) return item;
+          if (newQuantity > product.stock) {
+            alert("Not enough stock available!");
+            return item;
+          }
+          return {
+            ...item,
+            quantity: newQuantity,
+            subtotal: newQuantity * item.price,
+          };
         }
-        return {
-          ...item,
-          quantity: newQuantity,
-          subtotal: newQuantity * item.price
-        };
-      }
-      return item;
-    }));
+        return item;
+      })
+    );
   };
 
   const removeFromCart = (productId: string) => {
-    setCart(cart.filter(item => item.productId !== productId));
+    setCart(cart.filter((item) => item.productId !== productId));
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+  };
 
-  const calculateTotal = () =>
-    cart.reduce((sum, item) => sum + item.subtotal, 0);
+  const calculateTotal = () => {
+    return cart.reduce((sum, item) => sum + item.subtotal, 0);
+  };
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      alert('Cart is empty!');
+      alert("Cart is empty!");
       return;
     }
     setShowPaymentModal(true);
@@ -204,7 +292,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
       total: calculateTotal(),
       paymentMethod,
       cashierId: user.id,
-      cashierName: user.name
+      cashierName: user.name,
     };
 
     try {
@@ -212,9 +300,25 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
       clearCart();
       setShowPaymentModal(false);
     } catch (error) {
-      console.error('Payment failed:', error);
-      alert('Payment failed. Please try again.');
+      console.error("Payment failed:", error);
+      alert("Payment failed. Please try again.");
     }
+  };
+
+  // Helper: get image URL to use for a category (backend image -> fallback online -> placeholder)
+  const getCategoryImageUrl = (cat: Category | { name: string; imagePath?: string | null }) => {
+    if (cat.imagePath) {
+      // assume backend stores images under /static/category_images/<filename>
+      return `${BACKEND_URL}/static/category_images/${cat.imagePath}`;
+    }
+    // fallback to the online images map
+    return CATEGORY_IMAGES[cat.name] || FALLBACK_IMAGE;
+  };
+
+  // derive counts
+  const getCategoryCount = (categoryName: string) => {
+    if (categoryName === "All") return products.length;
+    return products.filter((p) => p.category === categoryName).length;
   };
 
   return (
@@ -223,7 +327,6 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
       <div className="lg:col-span-2 space-y-4">
         <Card className="border-[#D1EDC5] shadow-md">
           <CardContent className="pt-6">
-            {/* Search Bar */}
             <div className="mb-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-gray-400" />
@@ -237,26 +340,29 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
               </div>
             </div>
 
-            {/* Product Display Area */}
             <div className="bg-gray-100 rounded-3xl p-6 mb-4 min-h-[350px] max-h-[350px] overflow-y-auto">
               {filteredProducts.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {filteredProducts.map(product => (
+                  {filteredProducts.map((product) => (
                     <button
                       key={product.id}
                       onClick={() => addToCart(product)}
                       disabled={product.stock <= 0}
                       className={`text-left p-4 rounded-xl border transition-all ${
                         product.stock <= 0
-                          ? 'bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed'
-                          : 'bg-white border-[#D1EDC5] hover:border-[#a8dfa0] hover:shadow-lg hover:scale-105'
+                          ? "bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed"
+                          : "bg-white border-[#D1EDC5] hover:border-[#a8dfa0] hover:shadow-lg hover:scale-105"
                       }`}
                     >
                       <div className="text-sm text-gray-900 mb-1">{product.name}</div>
                       <div className="text-xs text-gray-500 mb-2">{product.category}</div>
                       <div className="flex justify-between items-center">
-                        <span className="text-[#1a5a1a]">₱{product.price.toFixed(2)}</span>
-                        <span className={`text-xs ${product.stock <= product.minStock ? 'text-red-600' : 'text-gray-500'}`}>
+                        <span className="text-[#1a5a1a]">₹{product.price.toFixed(2)}</span>
+                        <span
+                          className={`text-xs ${
+                            product.stock <= product.minStock ? "text-red-600" : "text-gray-500"
+                          }`}
+                        >
                           Stock: {product.stock}
                         </span>
                       </div>
@@ -265,9 +371,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
-                  {selectedCategory
-                    ? `No products in ${selectedCategory}`
-                    : 'No products found'}
+                  {selectedCategory ? `No products in ${selectedCategory}` : "No products found"}
                 </div>
               )}
             </div>
@@ -277,51 +381,51 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
               {/* All Products card */}
               <button
                 onClick={() => setSelectedCategory(null)}
-                className={`relative overflow-hidden rounded-2xl p-4 transition-all hover:scale-105 ${
-                  selectedCategory === null ? 'ring-4 ring-[#4a9d5f]' : ''
-                }`}
+                className={`relative overflow-hidden rounded-2xl p-4 transition-all 
+                  bg-gradient-to-br ${CATEGORY_GRADIENTS["allproducts"]}
+                  ${selectedCategory === null ? 'ring-4 ring-[#4a9d5f]' : ''}
+                `}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 opacity-80" />
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-full h-20 mb-2 flex items-center justify-center rounded-lg bg-white/70 text-gray-500 text-sm">
-                    All Products
-                  </div>
-                  <span className="text-xs text-gray-800 text-center">All</span>
+
+                <div className="relative w-full h-20 mb-2 overflow-hidden rounded-lg flex items-center justify-center border border-gray-200">
+                    <div className={`absolute inset-0 bg-gradient-to-br ${CATEGORY_GRADIENTS["all"]} opacity-70`}></div>
+                    <img
+                      src="https://media.istockphoto.com/photos/shopping-basket-full-of-variety-of-grocery-products-food-and-drink-on-picture-id1319625327?b=1&k=20&m=1319625327&s=170667a&w=0&h=FRRQT4yPOTumTJkCOmthHBcRvzoGvqw7drlSlYZhUNo="
+                      alt="All Products"
+                      className="w-full h-full object-cover opacity-80"
+                    />
+                    <div className="relative text-sm text-gray-700"> </div>
                 </div>
+
+                <span className="text-xs text-gray-800 text-center">All</span>
               </button>
 
-              {/* Real categories */}
-              {CATEGORY_DATA.map((category) => {
-                // Find matching backend category to see if it has a custom image
-                const backendCat = categories.find((c) => c.name === category.name);
-
-                // Build image URL:
-                // image from DB if exists, else fallback to hard-coded one
-                const imageSrc = backendCat?.imagePath
-                  ? `${import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:5000"}/static/uploads/${backendCat.imagePath}`
-                  : category.image;
+              {categories.map(category => {
+                const key = normalizeCategoryName(category.name).toLowerCase();
+                const gradient = CATEGORY_GRADIENTS[key] || "from-gray-100 to-gray-200";
+                const imageToUse = getCategoryImageUrl(category as Category);
 
                 return (
                   <button
-                    key={category.name}
-                    onClick={() =>
-                      setSelectedCategory(
-                        selectedCategory === category.name ? null : category.name
-                      )
-                    }
-                    className={`relative overflow-hidden rounded-2xl p-4 transition-all hover:scale-105 ${
-                      selectedCategory === category.name ? 'ring-4 ring-[#4a9d5f]' : ''
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.name)}
+                    className={`relative rounded-2xl p-4 transition-all hover:scale-105 ${
+                      selectedCategory === category.name ? "ring-4 ring-[#4a9d5f]" : ""
                     }`}
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${category.bgColor} opacity-80`} />
+                    {/* Gradient Background */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-2xl`}></div>
+
+                    {/* Content */}
                     <div className="relative z-10 flex flex-col items-center">
                       <div className="w-full h-20 mb-2 overflow-hidden rounded-lg">
                         <ImageWithFallback
-                          src={imageSrc}
+                          src={imageToUse}
                           alt={category.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover  opacity-80"
                         />
                       </div>
+
                       <span className="text-xs text-gray-800 text-center">
                         {category.name}
                       </span>
@@ -329,8 +433,8 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                   </button>
                 );
               })}
-            </div>
 
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -353,18 +457,16 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
           </CardHeader>
           <CardContent className="pt-6">
             {cart.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                Cart is empty
-              </div>
+              <div className="text-center py-8 text-gray-500">Cart is empty</div>
             ) : (
               <div className="space-y-3">
                 <div className="max-h-[400px] overflow-y-auto space-y-3">
-                  {cart.map(item => (
+                  {cart.map((item) => (
                     <div key={item.productId} className="bg-[#f0f9ed] p-3 rounded-xl border border-[#D1EDC5]">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
                           <div className="text-sm text-gray-900">{item.productName}</div>
-                          <div className="text-xs text-gray-500">₱{item.price.toFixed(2)} each</div>
+                          <div className="text-xs text-gray-500">₹{item.price.toFixed(2)} each</div>
                         </div>
                         <Button
                           variant="ghost"
@@ -375,7 +477,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                           <Trash2 className="size-4" />
                         </Button>
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Button
@@ -397,9 +499,7 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                             <Plus className="size-3" />
                           </Button>
                         </div>
-                        <div className="text-sm text-[#1a5a1a]">
-                          ₱{item.subtotal.toFixed(2)}
-                        </div>
+                        <div className="text-sm text-[#1a5a1a]">₹{item.subtotal.toFixed(2)}</div>
                       </div>
                     </div>
                   ))}
@@ -408,11 +508,9 @@ export function SalesTransaction({ user, products, onAddSale }: SalesTransaction
                 <div className="border-t border-[#D1EDC5] pt-3 mt-3">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-900">Total</span>
-                    <span className="text-2xl text-[#1a5a1a]">
-                      ₱{calculateTotal().toFixed(2)}
-                    </span>
+                    <span className="text-2xl text-[#1a5a1a]">₹{calculateTotal().toFixed(2)}</span>
                   </div>
-                  
+
                   <Button
                     onClick={handleCheckout}
                     className="w-full bg-gradient-to-r from-[#D1EDC5] to-[#a8dfa0] hover:from-[#a8dfa0] hover:to-[#7fcd77] text-[#1a5a1a]"
