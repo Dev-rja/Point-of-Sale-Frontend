@@ -1,7 +1,6 @@
-import { projectId, publicAnonKey } from './supabase/info';
 import { User, Product, Sale } from '../App';
 
-const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-6f1f8962`;
+const API_BASE = 'http://localhost:5000/';
 
 let accessToken: string | null = null;
 
@@ -21,24 +20,16 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
-function getHeaders(requireAuth = false): HeadersInit {
-  const headers: HeadersInit = {
+function getHeaders(): HeadersInit {
+  return {
     'Content-Type': 'application/json',
   };
-
-  if (requireAuth && accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  } else if (!requireAuth) {
-    headers['Authorization'] = `Bearer ${publicAnonKey}`;
-  }
-
-  return headers;
 }
 
 // Auth API
 export const authAPI = {
   async signup(username: string, email: string, password: string, role: 'admin' | 'cashier', name: string) {
-    const response = await fetch(`${API_BASE}/auth/signup`, {
+    const response = await fetch(`${API_BASE}/api/signup`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ username, email, password, role, name })
@@ -52,7 +43,7 @@ export const authAPI = {
   },
 
   async login(username: string, password: string) {
-    const response = await fetch(`${API_BASE}/auth/login`, {
+    const response = await fetch(`${API_BASE}/api/login`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ username, password })
@@ -78,7 +69,7 @@ export const authAPI = {
 
     try {
       const response = await fetch(`${API_BASE}/auth/verify`, {
-        headers: getHeaders(true)
+        headers: getHeaders()
       });
 
       if (!response.ok) {
@@ -106,19 +97,30 @@ export const productsAPI = {
     const response = await fetch(`${API_BASE}/products`, {
       headers: getHeaders()
     });
-
+  
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || 'Failed to fetch products');
     }
-
-    return data.products;
-  },
+  
+    // 🔑 NORMALIZE Flask response → Frontend shape
+    return data.map((p: any) => ({
+      id: p.product_id,
+      name: p.product_name,
+      price: p.price,
+      stock: p.stock_quantity,
+      minStock: p.min_stock,
+      category: p.category_name,
+      unit: p.unit,
+      barcode: p.barcode,
+      imagePath: p.image_path,
+    }));
+  },  
 
   async create(product: Omit<Product, 'id'>): Promise<Product> {
     const response = await fetch(`${API_BASE}/products`, {
       method: 'POST',
-      headers: getHeaders(true),
+      headers: getHeaders(),
       body: JSON.stringify(product)
     });
 
@@ -133,7 +135,7 @@ export const productsAPI = {
   async update(id: string, updates: Partial<Product>): Promise<Product> {
     const response = await fetch(`${API_BASE}/products/${id}`, {
       method: 'PUT',
-      headers: getHeaders(true),
+      headers: getHeaders(),
       body: JSON.stringify(updates)
     });
 
@@ -146,44 +148,58 @@ export const productsAPI = {
   }
 };
 
-// Sales API
+// Sales API (Flask-compatible)
 export const salesAPI = {
   async getAll(): Promise<Sale[]> {
-    const response = await fetch(`${API_BASE}/sales`, {
-      headers: getHeaders(true)
-    });
+    const response = await fetch(`${API_BASE}/transactions`);
 
-    const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to fetch sales');
+      throw new Error('Failed to fetch transactions');
     }
 
-    // Convert timestamp strings to Date objects
-    return data.sales.map((sale: any) => ({
-      ...sale,
-      timestamp: new Date(sale.timestamp)
+    const data = await response.json();
+
+    // Flask returns an ARRAY, not { sales: [...] }
+    return data.map((t: any) => ({
+      transaction_id: t.transaction_id,
+      receiptNumber: `RCP-${t.transaction_id}`,
+      total: t.total_amount,
+      paymentMethod: t.payment_method,
+      cashierName: t.cashier,
+      timestamp: new Date(t.date_time),
+      items: t.items ?? [],
     }));
   },
 
-  async create(sale: Omit<Sale, 'id' | 'receiptNumber' | 'timestamp'>): Promise<Sale> {
-    const response = await fetch(`${API_BASE}/sales`, {
+  async create(
+    sale: Omit<Sale, 'transaction_id' | 'receiptNumber' | 'timestamp'>
+  ): Promise<Sale> {
+    const response = await fetch(`${API_BASE}/transactions`, {
       method: 'POST',
-      headers: getHeaders(true),
-      body: JSON.stringify(sale)
+      headers: getHeaders(),
+      body: JSON.stringify({
+        payment_method: sale.paymentMethod,
+        total_amount: sale.total,
+        items: sale.items,
+        cashier: sale.cashierName,
+      }),
     });
 
     const data = await response.json();
+
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to create sale');
+      throw new Error(data.error || 'Failed to create transaction');
     }
 
-    // Convert timestamp string to Date object
     return {
-      ...data.sale,
-      timestamp: new Date(data.sale.timestamp)
+      ...sale,
+      transaction_id: data.transaction_id,
+      receiptNumber: `RCP-${data.transaction_id}`,
+      timestamp: new Date().toISOString(),
     };
-  }
+  },
 };
+
 
 // Initialize demo data
 export async function initializeDemoData() {

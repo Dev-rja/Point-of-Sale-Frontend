@@ -51,28 +51,33 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
 
   // Product sales data
   const getProductSales = () => {
-    const productSales = new Map<string, { name: string; quantity: number; revenue: number }>();
-
+    const productSales = new Map<
+      number,
+      { name: string; quantity: number; revenue: number }
+    >();
+  
     sales.forEach(sale => {
       sale.items.forEach(item => {
-        const existing = productSales.get(item.productId);
+        const existing = productSales.get(item.product_id);
+  
         if (existing) {
           existing.quantity += item.quantity;
           existing.revenue += item.subtotal;
         } else {
-          productSales.set(item.productId, {
-            name: item.productName,
+          productSales.set(item.product_id, {
+            name: item.product_name,
             quantity: item.quantity,
             revenue: item.subtotal
           });
         }
       });
     });
-
+  
     return Array.from(productSales.values())
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
   };
+  
 
   // Category distribution
   const getCategoryDistribution = () => {
@@ -292,7 +297,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
                 {sales.length > 0 ? (
                   sales.slice().reverse().map(sale => (
                     <tr 
-                      key={sale.id} 
+                      key={sale.transaction_id} 
                       className="border-b border-gray-100 hover:bg-[#f0f9ed] cursor-pointer transition-colors"
                       onClick={() => handleSaleClick(sale)}
                     >
@@ -313,7 +318,8 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right text-gray-900">{sale.items.length}</td>
-                      <td className="py-3 px-4 text-right text-[#1a5a1a]">₹{sale.total.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right text-[#1a5a1a]">₹{Number(sale.total ?? 0).toFixed(2)}
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -448,7 +454,7 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
                     <tbody>
                       {selectedSale.items.map((item, index) => (
                         <tr key={index} className="border-b border-gray-100">
-                          <td className="py-3 px-4 text-sm text-gray-900">{item.productName}</td>
+                          <td className="py-3 px-4 text-sm text-gray-900">{item.product_name}</td>
                           <td className="py-3 px-4 text-center text-sm text-gray-900">{item.quantity}</td>
                           <td className="py-3 px-4 text-right text-sm text-gray-900">₹{item.price.toFixed(2)}</td>
                           <td className="py-3 px-4 text-right text-sm text-[#1a5a1a]">₹{item.subtotal.toFixed(2)}</td>

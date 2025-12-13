@@ -77,7 +77,7 @@ export function ReceiptModal({
               <tbody>
                 {items.map((item, index) => (
                   <tr key={index} className="border-b border-gray-100">
-                    <td className="py-2 text-gray-900">{item.productName}</td>
+                    <td className="py-2 text-gray-900">{item.product_name}</td>
                     <td className="text-center py-2 text-gray-900">{item.quantity}</td>
                     <td className="text-right py-2 text-gray-900">₹{item.price.toFixed(2)}</td>
                     <td className="text-right py-2 text-gray-900">₹{item.subtotal.toFixed(2)}</td>

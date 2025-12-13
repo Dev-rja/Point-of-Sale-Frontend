@@ -229,7 +229,7 @@ export function SalesTransaction({
       return;
     }
 
-    const existingItem = cart.find((item) => item.productId === product.id);
+    const existingItem = cart.find((item) => item.product_id === Number(product.id));
     if (existingItem) {
       if (existingItem.quantity >= product.stock) {
         alert("Not enough stock available!");
@@ -237,7 +237,7 @@ export function SalesTransaction({
       }
       setCart(
         cart.map((item) =>
-          item.productId === product.id
+          item.product_id === Number(product.id)
             ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
             : item
         )
@@ -246,8 +246,8 @@ export function SalesTransaction({
       setCart([
         ...cart,
         {
-          productId: product.id,
-          productName: product.name,
+          product_id: Number(product.id),
+          product_name: product.name,
           quantity: 1,
           price: product.price,
           subtotal: product.price,
@@ -256,13 +256,13 @@ export function SalesTransaction({
     }
   };
 
-  const updateQuantity = (productId: string, change: number) => {
-    const product = products.find((p) => p.id === productId);
+  const updateQuantity = (productId: number, change: number) => {
+    const product = products.find((p) => Number(p.id) === productId);
     if (!product) return;
 
     setCart(
       cart.map((item) => {
-        if (item.productId === productId) {
+        if (item.product_id === Number(product.id)) {
           const newQuantity = item.quantity + change;
           if (newQuantity <= 0) return item;
           if (newQuantity > product.stock) {
@@ -280,8 +280,8 @@ export function SalesTransaction({
     );
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(cart.filter((item) => item.productId !== productId));
+  const removeFromCart = (productId: number) => {
+    setCart(cart.filter((item) => item.product_id !== productId));
   };
 
   const clearCart = () => {
@@ -302,12 +302,17 @@ export function SalesTransaction({
 
   const handlePaymentComplete = async (paymentMethod: string) => {
     const saleData = {
-      items: cart,
-      total: calculateTotal(),
-      paymentMethod,
-      cashierId: user.id,
-      cashierName: user.name,
+      user_id: user.id,
+      payment_method: paymentMethod,
+      total_amount: calculateTotal(),
+      cashier: user.name,
+      items: cart.map(item => ({
+        product_id:item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+      })),
     };
+    
 
     try {
       await onAddSale(saleData);
@@ -478,16 +483,16 @@ export function SalesTransaction({
               <div className="space-y-3">
                 <div className="max-h-[400px] overflow-y-auto space-y-3">
                   {cart.map((item) => (
-                    <div key={item.productId} className="bg-[#f0f9ed] p-3 rounded-xl border border-[#D1EDC5]">
+                    <div key={item.product_id} className="bg-[#f0f9ed] p-3 rounded-xl border border-[#D1EDC5]">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <div className="text-sm text-gray-900">{item.productName}</div>
+                          <div className="text-sm text-gray-900">{item.product_name}</div>
                           <div className="text-xs text-gray-500">₹{item.price.toFixed(2)} each</div>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeFromCart(item.productId)}
+                          onClick={() => removeFromCart(item.product_id)}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="size-4" />
@@ -499,7 +504,7 @@ export function SalesTransaction({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item.productId, -1)}
+                            onClick={() => updateQuantity(item.product_id, -1)}
                             disabled={item.quantity <= 1}
                             className="border-[#D1EDC5] hover:bg-white"
                           >
@@ -509,7 +514,7 @@ export function SalesTransaction({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item.productId, 1)}
+                            onClick={() => updateQuantity(item.product_id, 1)}
                             className="border-[#D1EDC5] hover:bg-white"
                           >
                             <Plus className="size-3" />

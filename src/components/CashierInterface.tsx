@@ -112,7 +112,7 @@ export function CashierInterface({ user, products, sales, onLogout, onAddSale }:
                       {sales.length > 0 ? (
                         sales.slice().reverse().map(sale => (
                           <tr 
-                            key={sale.id} 
+                            key={sale.transaction_id} 
                             className="border-b border-[#D4E7C5] hover:bg-[#F5F9F2] cursor-pointer transition-all"
                             onClick={() => handleSaleClick(sale)}
                           >
@@ -133,7 +133,8 @@ export function CashierInterface({ user, products, sales, onLogout, onAddSale }:
                               </span>
                             </td>
                             <td className="py-4 px-4 text-right text-[#2D5016]">{sale.items.length}</td>
-                            <td className="py-4 px-4 text-right text-[#4A7C3A]">₹{sale.total.toFixed(2)}</td>
+                            <td className="py-4 px-4 text-right text-[#4A7C3A]">₹{Number(sale.total ?? 0).toFixed(2)}
+                            </td>
                           </tr>
                         ))
                       ) : (
@@ -232,7 +233,7 @@ export function CashierInterface({ user, products, sales, onLogout, onAddSale }:
                     <tbody>
                       {selectedSale.items.map((item, index) => (
                         <tr key={index} className="border-b border-[#D4E7C5]">
-                          <td className="py-3 px-4 text-[#2D5016]">{item.productName}</td>
+                          <td className="py-3 px-4 text-[#2D5016]">{item.product_name}</td>
                           <td className="py-3 px-4 text-center text-[#2D5016]">{item.quantity}</td>
                           <td className="py-3 px-4 text-right text-[#5B7A4A]">₹{item.price.toFixed(2)}</td>
                           <td className="py-3 px-4 text-right text-[#4A7C3A]">₹{item.subtotal.toFixed(2)}</td>

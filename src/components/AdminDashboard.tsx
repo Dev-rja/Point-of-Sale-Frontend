@@ -174,7 +174,8 @@ export function AdminDashboard({
                   <div className="text-white/90">Today's Revenue</div>
                   <TrendingUp className="size-5 text-white group-hover:scale-110 transition-transform" />
                 </div>
-                <div className="text-white">₹{todayRevenue.toFixed(2)}</div>
+                <div className="text-white">₹{(todayRevenue ?? 0).toFixed(2)}
+                </div>
                 <div className="w-full h-1 bg-white/30 rounded-full mt-3">
                   <div className="h-1 bg-white rounded-full w-4/5"></div>
                 </div>
@@ -213,7 +214,7 @@ export function AdminDashboard({
               </div>
               <div className="space-y-3">
                 {sales.slice(0, 5).map(sale => (
-                  <div key={sale.id} className="flex justify-between items-center p-3 rounded-xl hover:bg-[#F5F9F2] transition-colors border border-transparent hover:border-[#D4E7C5]">
+                  <div key={sale.transaction_id} className="flex justify-between items-center p-3 rounded-xl hover:bg-[#F5F9F2] transition-colors border border-transparent hover:border-[#D4E7C5]">
                     <div>
                       <div className="text-[#2D5016]">{sale.receiptNumber}</div>
                       <div className="text-[#5B7A4A]">
@@ -221,7 +222,7 @@ export function AdminDashboard({
                       </div>
                     </div>
                     <div className="text-[#4A7C3A] px-3 py-1 bg-[#E8F5D4] rounded-lg">
-                    ₹{sale.total.toFixed(2)}
+                    ₹{Number(sale.total ?? 0).toFixed(2)}
                     </div>
                   </div>
                 ))}

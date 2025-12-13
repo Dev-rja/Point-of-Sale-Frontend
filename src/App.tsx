@@ -28,22 +28,21 @@ export type Product = {
 
 
 export interface SaleItem {
-  productId: string;
-  productName: string;
+  product_id: number;
+  product_name: string;
   quantity: number;
   price: number;
   subtotal: number;
 }
 
 export interface Sale {
-  id: string;
-  items: SaleItem[];
-  total: number;
-  paymentMethod: string;
-  cashierId: string;
-  cashierName: string;
-  timestamp: Date;
+  transaction_id: number;
   receiptNumber: string;
+  total: number;
+  timestamp: string;
+  cashierName: string;
+  paymentMethod: string;
+  items: SaleItem[];
 }
 
 // ========= App Component =========
@@ -115,8 +114,15 @@ function App() {
 
   const handleLogin = async (username: string, password: string) => {
     try {
-      const { user } = await authAPI.login(username, password);
-      setCurrentUser(user);
+      const res = await authAPI.login(username, password);
+
+      setCurrentUser({
+        id: String(res.user_id),
+        username: res.username,
+        role: res.role,
+        name: res.username, // or capitalize if you want
+      });
+      
       setShowSignUp(false);
       await loadData();
     } catch (error) {
