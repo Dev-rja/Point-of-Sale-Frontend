@@ -57,8 +57,8 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
 
   const handleReceiptClose = () => {
     setShowReceipt(false);
-    onPaymentComplete(paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'gcash' ? `GCash (${gcashNumber})` : `Card`);
-  };
+    onClose(); // UI close only — NO backend call
+  };  
 
   if (showReceipt) {
     return (

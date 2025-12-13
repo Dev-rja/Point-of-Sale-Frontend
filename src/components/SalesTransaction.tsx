@@ -301,6 +301,11 @@ export function SalesTransaction({
   };
 
   const handlePaymentComplete = async (paymentMethod: string) => {
+    // 🔒 GUARD: prevent empty or already-cleared cart
+    if (!cart.length) {
+      console.warn('handlePaymentComplete called with empty cart');
+      return;
+    }
     const saleData = {
       user_id: user.id,
       payment_method: paymentMethod,
