@@ -226,7 +226,7 @@ function App() {
   
       const newSale = await salesAPI.create(payload);
   
-      setSales(prev => [newSale, ...prev]);
+      await loadData();
   
       const updatedProducts = await fetchProducts();
       setProducts(updatedProducts);
