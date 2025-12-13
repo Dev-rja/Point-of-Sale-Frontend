@@ -1,6 +1,6 @@
 import { User, Product, Sale } from '../App';
 
-const API_BASE = 'http://localhost:5000/';
+const API_BASE = 'http://localhost:5000';
 
 let accessToken: string | null = null;
 
@@ -26,13 +26,20 @@ function getHeaders(): HeadersInit {
   };
 }
 
-// Auth API
+/* ===================== AUTH API ===================== */
+
 export const authAPI = {
-  async signup(username: string, email: string, password: string, role: 'admin' | 'cashier', name: string) {
+  async signup(
+    username: string,
+    email: string,
+    password: string,
+    role: 'admin' | 'cashier',
+    name: string
+  ) {
     const response = await fetch(`${API_BASE}/api/signup`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ username, email, password, role, name })
+      body: JSON.stringify({ username, email, password, role, name }),
     });
 
     const data = await response.json();
@@ -46,7 +53,7 @@ export const authAPI = {
     const response = await fetch(`${API_BASE}/api/login`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ username, password }),
     });
 
     const data = await response.json();
@@ -63,13 +70,11 @@ export const authAPI = {
 
   async verify(): Promise<{ success: boolean; user?: User }> {
     const token = getAccessToken();
-    if (!token) {
-      return { success: false };
-    }
+    if (!token) return { success: false };
 
     try {
       const response = await fetch(`${API_BASE}/auth/verify`, {
-        headers: getHeaders()
+        headers: getHeaders(),
       });
 
       if (!response.ok) {
@@ -77,10 +82,8 @@ export const authAPI = {
         return { success: false };
       }
 
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Verify error:', error);
+      return await response.json();
+    } catch {
       setAccessToken(null);
       return { success: false };
     }
@@ -88,22 +91,22 @@ export const authAPI = {
 
   logout() {
     setAccessToken(null);
-  }
+  },
 };
 
-// Products API
+/* ===================== PRODUCTS API ===================== */
+
 export const productsAPI = {
   async getAll(): Promise<Product[]> {
     const response = await fetch(`${API_BASE}/products`, {
-      headers: getHeaders()
+      headers: getHeaders(),
     });
-  
+
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || 'Failed to fetch products');
     }
-  
-    // 🔑 NORMALIZE Flask response → Frontend shape
+
     return data.map((p: any) => ({
       id: p.product_id,
       name: p.product_name,
@@ -115,28 +118,13 @@ export const productsAPI = {
       barcode: p.barcode,
       imagePath: p.image_path,
     }));
-  },  
-
-  async create(product: Omit<Product, 'id'>): Promise<Product> {
-    const response = await fetch(`${API_BASE}/products`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(product)
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to create product');
-    }
-
-    return data.product;
   },
 
   async update(id: string, updates: Partial<Product>): Promise<Product> {
     const response = await fetch(`${API_BASE}/products/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
-      body: JSON.stringify(updates)
+      body: JSON.stringify(updates),
     });
 
     const data = await response.json();
@@ -145,13 +133,27 @@ export const productsAPI = {
     }
 
     return data.product;
-  }
+  },
 };
 
-// Sales API (Flask-compatible)
+/* ===================== SALES / TRANSACTIONS API ===================== */
+
+// utils/api.ts
+type CreateTransactionPayload = {
+  user_id: number;
+  payment_method: string;
+  total_amount: number;
+  cashier: string;
+  items: {
+    product_id: number;
+    quantity: number;
+    price: number;
+  }[];
+};
+
 export const salesAPI = {
   async getAll(): Promise<Sale[]> {
-    const response = await fetch(`${API_BASE}/transactions`);
+    const response = await fetch(`${API_BASE}/api/transactions`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch transactions');
@@ -159,30 +161,22 @@ export const salesAPI = {
 
     const data = await response.json();
 
-    // Flask returns an ARRAY, not { sales: [...] }
     return data.map((t: any) => ({
       transaction_id: t.transaction_id,
       receiptNumber: `RCP-${t.transaction_id}`,
       total: t.total_amount,
       paymentMethod: t.payment_method,
       cashierName: t.cashier,
-      timestamp: new Date(t.date_time),
+      timestamp: t.date_time,
       items: t.items ?? [],
     }));
   },
 
-  async create(
-    sale: Omit<Sale, 'transaction_id' | 'receiptNumber' | 'timestamp'>
-  ): Promise<Sale> {
-    const response = await fetch(`${API_BASE}/transactions`, {
+  async create(payload: CreateTransactionPayload): Promise<Sale> {
+    const response = await fetch(`${API_BASE}/api/transactions`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({
-        payment_method: sale.paymentMethod,
-        total_amount: sale.total,
-        items: sale.items,
-        cashier: sale.cashierName,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();
@@ -192,40 +186,41 @@ export const salesAPI = {
     }
 
     return {
-      ...sale,
       transaction_id: data.transaction_id,
       receiptNumber: `RCP-${data.transaction_id}`,
+      total: payload.total_amount,
+      paymentMethod: payload.payment_method,
+      cashierName: payload.cashier,
       timestamp: new Date().toISOString(),
+      items: payload.items.map(i => ({
+        product_id: i.product_id,
+        product_name: '',
+        quantity: i.quantity,
+        price: i.price,
+        subtotal: i.quantity * i.price,
+      })),
     };
   },
 };
 
+/* ===================== SYSTEM ===================== */
 
-// Initialize demo data
 export async function initializeDemoData() {
-  try {
-    const response = await fetch(`${API_BASE}/initialize`, {
-      method: 'POST',
-      headers: getHeaders()
-    });
+  const response = await fetch(`${API_BASE}/initialize`, {
+    method: 'POST',
+    headers: getHeaders(),
+  });
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Initialize error:', error);
-    throw error;
-  }
+  return await response.json();
 }
 
-// Health check
 export async function healthCheck() {
   try {
     const response = await fetch(`${API_BASE}/health`, {
-      headers: getHeaders()
+      headers: getHeaders(),
     });
     return await response.json();
-  } catch (error) {
-    console.error('Health check error:', error);
+  } catch {
     return { status: 'error' };
   }
 }

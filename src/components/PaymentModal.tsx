@@ -13,14 +13,19 @@ interface PaymentModalProps {
   cart: SaleItem[];
   cashierName: string;
   onClose: () => void;
-  onPaymentComplete: (paymentMethod: string) => void;
+  onPaymentComplete: (sale: {
+    paymentMethod: string;
+    total: number;
+    items: SaleItem[];
+  }) => void;
 }
 
+
 export function PaymentModal({ total, cart, cashierName, onClose, onPaymentComplete }: PaymentModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'gcash' | 'card'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'paytm' | 'card'>('cash');
   const [cashAmount, setCashAmount] = useState('');
-  const [gcashNumber, setGcashNumber] = useState('');
-  const [gcashReference, setGcashReference] = useState('');
+  const [paytmNumber, setPaytmNumber] = useState('');
+  const [paytmReference, setPaytmReference] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptNumber, setReceiptNumber] = useState('');
@@ -28,45 +33,60 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
   const cashChange = cashAmount ? parseFloat(cashAmount) - total : 0;
 
   const handlePayment = () => {
-    let method = '';
-
+    if (!cart.length) return;
+  
     if (paymentMethod === 'cash') {
       if (!cashAmount || parseFloat(cashAmount) < total) {
         alert('Insufficient cash amount!');
         return;
       }
-      method = 'Cash';
-    } else if (paymentMethod === 'gcash') {
-      if (!gcashNumber || !gcashReference) {
-        alert('Please enter GCash number and reference!');
+    }
+  
+    if (paymentMethod === 'paytm') {
+      if (!paytmNumber || !paytmReference) {
+        alert('Please enter Paytm number and reference!');
         return;
       }
-      method = `GCash (${gcashNumber})`;
-    } else if (paymentMethod === 'card') {
+    }
+  
+    if (paymentMethod === 'card') {
       if (!cardNumber) {
         alert('Please enter card number!');
         return;
       }
-      method = `Card (**** ${cardNumber.slice(-4)})`;
     }
-
-    const receipt = `RCP-${Date.now()}`;
-    setReceiptNumber(receipt);
+  
+    setReceiptNumber(`RCP-${Date.now()}`);
+  
+    // THIS IS THE IMPORTANT PART
+    onPaymentComplete({
+      paymentMethod:
+        paymentMethod === 'cash'
+          ? 'Cash'
+          : paymentMethod === 'paytm'
+          ? `Paytm (${paytmNumber})`
+          : `Card (**** ${cardNumber.slice(-4)})`,
+      total,
+      items: cart,
+    });
+    
+  
     setShowReceipt(true);
   };
+  
 
   const handleReceiptClose = () => {
     setShowReceipt(false);
     onClose(); // UI close only — NO backend call
-  };  
-
+  };
+  
   if (showReceipt) {
     return (
       <ReceiptModal
         receiptNumber={receiptNumber}
         items={cart}
         total={total}
-        paymentMethod={paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'gcash' ? 'GCash' : 'Card'}
+        paymentMethod={paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'paytm' ? 'Paytm' : 'Card'}
         cashReceived={paymentMethod === 'cash' ? parseFloat(cashAmount) : undefined}
         change={paymentMethod === 'cash' ? cashChange : undefined}
         cashierName={cashierName}
@@ -145,8 +165,8 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
                 id="gcashNumber"
                 type="tel"
                 placeholder="09XX XXX XXXX"
-                value={gcashNumber}
-                onChange={(e) => setGcashNumber(e.target.value)}
+                value={paytmNumber}
+                onChange={(e) => setPaytmNumber(e.target.value)}
                 className="border-[#D1EDC5]"
               />
             </div>
@@ -157,8 +177,8 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
                 id="gcashReference"
                 type="text"
                 placeholder="Enter reference number"
-                value={gcashReference}
-                onChange={(e) => setGcashReference(e.target.value)}
+                value={paytmReference}
+                onChange={(e) => setPaytmReference(e.target.value)}
                 className="border-[#D1EDC5]"
               />
             </div>

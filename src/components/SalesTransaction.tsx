@@ -300,34 +300,35 @@ export function SalesTransaction({
     setShowPaymentModal(true);
   };
 
-  const handlePaymentComplete = async (paymentMethod: string) => {
-    // 🔒 GUARD: prevent empty or already-cleared cart
-    if (!cart.length) {
-      console.warn('handlePaymentComplete called with empty cart');
-      return;
-    }
+  const handlePaymentComplete = async (sale: {
+    paymentMethod: string;
+    total: number;
+    items: SaleItem[];
+  }) => {
+    if (!sale.items.length) return;
+  
     const saleData = {
       user_id: user.id,
-      payment_method: paymentMethod,
-      total_amount: calculateTotal(),
+      payment_method: sale.paymentMethod,
+      total_amount: sale.total,
       cashier: user.name,
-      items: cart.map(item => ({
-        product_id:item.product_id,
+      items: sale.items.map(item => ({
+        product_id: item.product_id,
         quantity: item.quantity,
         price: item.price,
       })),
     };
-    
-
+  
     try {
       await onAddSale(saleData);
       clearCart();
       setShowPaymentModal(false);
     } catch (error) {
-      console.error("Payment failed:", error);
-      alert("Payment failed. Please try again.");
+      console.error('Payment failed:', error);
+      alert('Payment failed. Please try again.');
     }
   };
+
 
   // Helper: get image URL to use for a category (backend image -> fallback online -> placeholder)
   const getCategoryImageUrl = (cat: Category | { name: string; imagePath?: string | null }) => {

@@ -198,22 +198,47 @@ function App() {
   };
 
   const handleAddSale = async (
-    saleData: Omit<Sale, 'id' | 'receiptNumber' | 'timestamp'>
+    saleData: {
+      paymentMethod: string;
+      total: number;
+      items: SaleItem[];
+      cashierName: string;
+    }
   ) => {
+    if (!currentUser) {
+      throw new Error('User not logged in');
+    }
+  
     try {
-      const newSale = await salesAPI.create(saleData);
+      const payload = {
+        user_id: Number(currentUser.id),
+        payment_method: saleData.paymentMethod, // ✅ backend key
+        total_amount: saleData.total,            // ✅ backend key
+        cashier: saleData.cashierName,            // ✅ backend key
+        items: saleData.items.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      };
+  
+      console.log('🚀 FINAL PAYLOAD:', payload);
+  
+      const newSale = await salesAPI.create(payload);
+  
       setSales(prev => [newSale, ...prev]);
-
-      // Reload products to get updated stock from Flask
+  
       const updatedProducts = await fetchProducts();
       setProducts(updatedProducts);
-
+  
       return newSale;
     } catch (error) {
       console.error('Failed to add sale:', error);
       throw error;
     }
   };
+  
+  
 
   if (isLoading) {
     return (
