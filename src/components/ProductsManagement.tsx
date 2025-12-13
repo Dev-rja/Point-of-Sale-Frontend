@@ -24,6 +24,7 @@ interface ProductsManagementProps {
   onUpdateProducts: (products: Product[]) => void;
   onAddProduct: (product: Omit<Product, 'id'>) => Promise<Product>;
   onUpdateProduct: (id: string, updates: Partial<Product>) => Promise<Product>;
+  onCategoriesUpdated?: () => void; 
 }
 
 const DEFAULT_CATEGORIES = [
@@ -45,7 +46,8 @@ export function ProductsManagement({
   products,
   onUpdateProducts,
   onAddProduct,
-  onUpdateProduct
+  onUpdateProduct,
+  onCategoriesUpdated,
 }: ProductsManagementProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -130,6 +132,7 @@ export function ProductsManagement({
     try {
       await deleteCategory(category.id);
       setCategories(prev => prev.filter(c => c.id !== category.id));
+      onCategoriesUpdated?.(); 
     } catch (error) {
       console.error('Failed to delete category:', error);
       alert('Failed to delete category. Please try again.');
@@ -222,6 +225,7 @@ export function ProductsManagement({
       // createCategory is assumed to be (name: string, imageFile?: File | null)
       const created = await createCategory(trimmed, newCategoryImage);
       setCategories(prev => [...prev, created]);
+      onCategoriesUpdated?.();
       setNewCategoryName('');
       setNewCategoryImage(null);
     } catch (err) {

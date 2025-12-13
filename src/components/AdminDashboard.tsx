@@ -1,5 +1,5 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import type { Category } from './SalesTransaction';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { User, Product, Sale } from '../App';
@@ -41,7 +41,27 @@ export function AdminDashboard({
     return saleDate.toDateString() === today.toDateString();
   });
   const todayRevenue = todaySales.reduce((sum, sale) => sum + sale.total, 0);
+  const [categories, setCategories] = useState<Category[]>([]);
 
+  const loadCategories = () => {
+    fetch("http://localhost:5000/categories")
+      .then(res => res.json())
+      .then(data => {
+        const normalized = data.map((c: any) => ({
+          id: c.id ?? c.category_id,
+          name: c.name ?? c.category_name,
+          imagePath: c.imagePath ?? c.image_path ?? null,
+        }));
+        setCategories(normalized);
+      })
+      .catch(console.error);
+  };
+  
+  useEffect(() => {
+    loadCategories();
+  }, []);
+  ;
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FAFBF8] to-[#F5F9F2]">
       {/* Header */}
@@ -213,11 +233,13 @@ export function AdminDashboard({
           </TabsContent>
 
           <TabsContent value="pos">
-            <SalesTransaction
-              user={user}
-              products={products}
-              onAddSale={onAddSale}
-            />
+          <SalesTransaction
+            user={user}
+            products={products}
+            onAddSale={onAddSale}
+            categories={categories}
+          />
+
           </TabsContent>
 
           <TabsContent value="products">
@@ -226,6 +248,7 @@ export function AdminDashboard({
               onUpdateProducts={onUpdateProducts}
               onAddProduct={onAddProduct}
               onUpdateProduct={onUpdateProduct}
+              onCategoriesUpdated={loadCategories}
             />
           </TabsContent>
 

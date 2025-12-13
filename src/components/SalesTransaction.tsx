@@ -184,16 +184,30 @@ export function SalesTransaction({
   // Use backend categories if provided, otherwise use CATEGORY_DATA as categories list
   // Normalize into { id, name, imagePath? } shape
   const categories = useMemo(() => {
-    if (backendCategories && backendCategories.length > 0) {
-      return backendCategories;
+    const map = new Map<string, Category>();
+  
+    // 1️⃣ Add hard-coded categories first (priority)
+    CATEGORY_DATA.forEach((c, idx) => {
+      map.set(c.name.toLowerCase(), {
+        id: `hc-${idx}`,
+        name: c.name,
+        imagePath: null, // hard-coded image handled separately
+      });
+    });
+  
+    // 2️⃣ Add backend categories if not already present
+    if (backendCategories) {
+      backendCategories.forEach((c) => {
+        const key = c.name.toLowerCase();
+        if (!map.has(key)) {
+          map.set(key, c);
+        }
+      });
     }
-    // build from CATEGORY_DATA
-    return CATEGORY_DATA.map((c, idx) => ({
-      id: `hc-${idx}`,
-      name: c.name,
-      imagePath: null,
-    }));
+  
+    return Array.from(map.values());
   }, [backendCategories]);
+  
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
@@ -400,40 +414,42 @@ export function SalesTransaction({
                 <span className="text-xs text-gray-800 text-center">All</span>
               </button>
 
-              {categories.map(category => {
-                const key = normalizeCategoryName(category.name).toLowerCase();
-                const gradient = CATEGORY_GRADIENTS[key] || "from-gray-100 to-gray-200";
-                const imageToUse = getCategoryImageUrl(category as Category);
+              {categories
+              .filter((c): c is Category => typeof c?.name === "string")
+              .map(category => {
+
+                const safeName = category.name ?? "Other";
+                const key = normalizeCategoryName(safeName).toLowerCase();
+                const gradient =
+                  CATEGORY_GRADIENTS[key] || CATEGORY_GRADIENTS["other"];
+                const imageToUse = getCategoryImageUrl(category);
 
                 return (
                   <button
                     key={category.id}
-                    onClick={() => setSelectedCategory(category.name)}
+                    onClick={() => setSelectedCategory(safeName)}
                     className={`relative rounded-2xl p-4 transition-all hover:scale-105 ${
-                      selectedCategory === category.name ? "ring-4 ring-[#4a9d5f]" : ""
+                      selectedCategory === safeName ? "ring-4 ring-[#4a9d5f]" : ""
                     }`}
                   >
-                    {/* Gradient Background */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-2xl`}></div>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-2xl`} />
 
-                    {/* Content */}
                     <div className="relative z-10 flex flex-col items-center">
                       <div className="w-full h-20 mb-2 overflow-hidden rounded-lg">
                         <ImageWithFallback
                           src={imageToUse}
-                          alt={category.name}
-                          className="w-full h-full object-cover  opacity-80"
+                          alt={safeName}
+                          className="w-full h-full object-cover opacity-80"
                         />
                       </div>
 
                       <span className="text-xs text-gray-800 text-center">
-                        {category.name}
+                        {safeName}
                       </span>
                     </div>
                   </button>
                 );
               })}
-
             </div>
           </CardContent>
         </Card>
