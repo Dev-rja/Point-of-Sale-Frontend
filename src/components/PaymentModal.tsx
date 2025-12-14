@@ -77,23 +77,8 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
 
   const handleReceiptClose = () => {
     setShowReceipt(false);
-    onClose(); // UI close only — NO backend call
+    onClose();
   };
-  
-  if (showReceipt) {
-    return (
-      <ReceiptModal
-        receiptNumber={receiptNumber}
-        items={cart}
-        total={total}
-        paymentMethod={paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'paytm' ? 'Paytm' : 'Card'}
-        cashReceived={paymentMethod === 'cash' ? parseFloat(cashAmount) : undefined}
-        change={paymentMethod === 'cash' ? cashChange : undefined}
-        cashierName={cashierName}
-        onClose={handleReceiptClose}
-      />
-    );
-  }
 
   return (
     <Dialog open={true} onOpenChange={onClose}>

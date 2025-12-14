@@ -6,7 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { User, Product, Sale, SaleItem } from "../App";
 import { Plus, Minus, Trash2, Search, ShoppingCart } from "lucide-react";
 import { PaymentModal } from "./PaymentModal";
+import { ReceiptModal } from "./ReceiptModal";
+
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+
 
 // Optional Category type (minimal)
 export interface Category {
@@ -180,6 +183,8 @@ export function SalesTransaction({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [lastSale, setLastSale] = useState<any>(null);
 
   // Use backend categories if provided, otherwise use CATEGORY_DATA as categories list
   // Normalize into { id, name, imagePath? } shape
@@ -320,14 +325,32 @@ export function SalesTransaction({
     };
   
     try {
-      await onAddSale(saleData);
+      // 1️ Save sale
+      const savedSale = await onAddSale(saleData);
+  
+      // 2️ Clear cart
       clearCart();
+  
+      // 3 Store receipt data
+      setLastSale({
+        receiptNumber: savedSale.receiptNumber ?? savedSale.transaction_id,
+        items: sale.items,
+        total: sale.total,
+        cashierName: user.name,
+        paymentMethod: sale.paymentMethod,
+      });
+  
+      // 4 Close payment modal
       setShowPaymentModal(false);
+  
+      // 5 Open receipt
+      setShowReceipt(true);
+  
     } catch (error) {
       console.error('Payment failed:', error);
       alert('Payment failed. Please try again.');
     }
-  };
+  };  
 
 
   // Helper: get image URL to use for a category (backend image -> fallback online -> placeholder)
@@ -559,6 +582,16 @@ export function SalesTransaction({
           cashierName={user.name}
           onClose={() => setShowPaymentModal(false)}
           onPaymentComplete={handlePaymentComplete}
+        />
+      )}
+      {showReceipt && lastSale && (
+        <ReceiptModal
+          receiptNumber={lastSale.receiptNumber}
+          items={lastSale.items}
+          total={lastSale.total}
+          paymentMethod={lastSale.paymentMethod}
+          cashierName={lastSale.cashierName}
+          onClose={() => setShowReceipt(false)}
         />
       )}
     </div>
