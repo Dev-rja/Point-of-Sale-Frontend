@@ -49,6 +49,65 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
     });
   };
 
+  // Weekly sales data
+  const getWeeklySales = () => {
+    const weeks = new Map<string, { revenue: number; transactions: number }>();
+  
+    sales.forEach(sale => {
+      const date = new Date(sale.timestamp);
+  
+      // Get ISO week
+      const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+      const weekNumber = Math.ceil(
+        (((date.getTime() - firstDayOfYear.getTime()) / 86400000) +
+          firstDayOfYear.getDay() + 1) / 7
+      );
+  
+      const key = `Week ${weekNumber}`;
+  
+      if (!weeks.has(key)) {
+        weeks.set(key, { revenue: 0, transactions: 0 });
+      }
+  
+      const w = weeks.get(key)!;
+      w.revenue += sale.total;
+      w.transactions += 1;
+    });
+  
+    return Array.from(weeks.entries()).map(([week, data]) => ({
+      week,
+      revenue: data.revenue,
+      transactions: data.transactions,
+    }));
+  };
+
+  // Monthly sales data
+  const getMonthlySales = () => {
+    const months = new Map<string, { revenue: number; transactions: number }>();
+  
+    sales.forEach(sale => {
+      const date = new Date(sale.timestamp);
+      const key = date.toLocaleString('en-US', {
+        month: 'short',
+        year: 'numeric',
+      });
+  
+      if (!months.has(key)) {
+        months.set(key, { revenue: 0, transactions: 0 });
+      }
+  
+      const m = months.get(key)!;
+      m.revenue += sale.total;
+      m.transactions += 1;
+    });
+  
+    return Array.from(months.entries()).map(([month, data]) => ({
+      month,
+      revenue: data.revenue,
+      transactions: data.transactions,
+    }));
+  };
+  
   // Product sales data
   const getProductSales = () => {
     const productSales = new Map<
@@ -95,6 +154,8 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
   };
 
   const dailySalesData = getDailySales();
+  const weeklySalesData = getWeeklySales();
+  const monthlySalesData = getMonthlySales();
   const topProducts = getProductSales();
   const categoryData = getCategoryDistribution();
 
@@ -198,7 +259,17 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
         <TabsContent value="weekly">
           <Card className="border-[#D1EDC5] shadow-sm">
             <CardContent className="pt-6">
-              <p className="text-center text-gray-500">Weekly report - Coming soon</p>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={weeklySalesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="week" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#D1EDC5" name="Revenue (₹)" />
+                  <Bar dataKey="transactions" fill="#a8dfa0" name="Transactions" />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </TabsContent>
@@ -206,7 +277,17 @@ export function ReportsPage({ sales, products }: ReportsPageProps) {
         <TabsContent value="monthly">
           <Card className="border-[#D1EDC5] shadow-sm">
             <CardContent className="pt-6">
-              <p className="text-center text-gray-500">Monthly report - Coming soon</p>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={monthlySalesData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="revenue" fill="#D1EDC5" name="Revenue (₹)" />
+                <Bar dataKey="transactions" fill="#a8dfa0" name="Transactions" />
+              </BarChart>
+            </ResponsiveContainer>
             </CardContent>
           </Card>
         </TabsContent>
