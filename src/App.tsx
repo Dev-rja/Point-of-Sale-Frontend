@@ -216,17 +216,17 @@ function App() {
     try {
       const payload = {
         user_id: Number(currentUser.id),
-        payment_method: saleData.paymentMethod, // ✅ backend key
-        total_amount: saleData.total,            // ✅ backend key
-        cashier: saleData.cashierName,            // ✅ backend key
+        payment_method: saleData.paymentMethod,
+        total_amount: saleData.total,
+        cashier: saleData.cashierName,
         items: saleData.items.map(item => ({
           product_id: item.product_id,
           quantity: item.quantity,
           price: item.price,
         })),
       };
-  
-      console.log('🚀 FINAL PAYLOAD:', payload);
+
+      console.log('FINAL PAYLOAD:', payload);
   
       const newSale = await salesAPI.create(payload);
   

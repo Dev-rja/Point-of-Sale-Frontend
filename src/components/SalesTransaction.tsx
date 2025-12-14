@@ -313,24 +313,17 @@ export function SalesTransaction({
     change?: number;
   }) => {
     if (!sale.items.length) return;
-  
-    const saleData = {
-      user_id: user.id,
-      payment_method: sale.paymentMethod,
-      total_amount: sale.total,
-      cashier: user.name,
-      items: sale.items.map(item => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-    };
-  
+
     try {
-      // 1️⃣ Save sale to backend
-      const savedSale = await onAddSale(saleData);
+      // 1 Save sale to backend
+      const savedSale = await onAddSale({
+        paymentMethod: sale.paymentMethod,
+        total: sale.total,
+        items: sale.items,
+        cashierName: user.name,
+      });
   
-      // 2️⃣ Store receipt data FIRST (this was the missing piece)
+      // 2 Store receipt data FIRST
       setLastSale({
         receiptNumber: `RCP-${savedSale.transaction_id}`,
         items: sale.items,
