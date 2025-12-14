@@ -309,6 +309,8 @@ export function SalesTransaction({
     paymentMethod: string;
     total: number;
     items: SaleItem[];
+    cashReceived?: number;
+    change?: number;
   }) => {
     if (!sale.items.length) return;
   
@@ -325,34 +327,37 @@ export function SalesTransaction({
     };
   
     try {
-      // 1️ Save sale
+      // 1️⃣ Save sale to backend
       const savedSale = await onAddSale(saleData);
   
-      // 2️ Clear cart
-      clearCart();
-  
-      // 3 Store receipt data
+      // 2️⃣ Store receipt data FIRST (this was the missing piece)
       setLastSale({
-        receiptNumber: savedSale.receiptNumber ?? savedSale.transaction_id,
+        receiptNumber: `RCP-${savedSale.transaction_id}`,
         items: sale.items,
         total: sale.total,
-        cashierName: user.name,
         paymentMethod: sale.paymentMethod,
+        cashierName: user.name,
+        cashReceived:
+          sale.paymentMethod === 'Cash' ? sale.cashReceived : undefined,
+        change:
+          sale.paymentMethod === 'Cash' ? sale.change : undefined,
       });
   
-      // 4 Close payment modal
+      // 3 Close payment modal
       setShowPaymentModal(false);
   
-      // 5 Open receipt
+      // 4 Open receipt
       setShowReceipt(true);
+  
+      // 5 Clear cart LAST
+      clearCart();
   
     } catch (error) {
       console.error('Payment failed:', error);
       alert('Payment failed. Please try again.');
     }
-  };  
-
-
+  };
+   
   // Helper: get image URL to use for a category (backend image -> fallback online -> placeholder)
   const getCategoryImageUrl = (cat: Category | { name: string; imagePath?: string | null }) => {
     if (cat.imagePath) {
@@ -591,6 +596,8 @@ export function SalesTransaction({
           total={lastSale.total}
           paymentMethod={lastSale.paymentMethod}
           cashierName={lastSale.cashierName}
+          cashReceived={lastSale.cashReceived}
+          change={lastSale.change}
           onClose={() => setShowReceipt(false)}
         />
       )}

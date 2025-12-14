@@ -28,6 +28,12 @@ export function ReceiptModal({
   const handlePrint = () => {
     window.print();
   };
+  
+  console.log('Receipt props:', {
+    paymentMethod,
+    cashReceived,
+    change,
+  });
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -93,25 +99,31 @@ export function ReceiptModal({
               <span className="text-gray-900">Total</span>
               <span className="text-gray-900">₹{total.toFixed(2)}</span>
             </div>
-            
+
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Payment Method</span>
               <span className="text-gray-900">{paymentMethod}</span>
             </div>
 
-            {cashReceived !== undefined && (
+            {paymentMethod === 'Cash' && cashReceived !== undefined && (
               <>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Cash Received</span>
-                  <span className="text-gray-900">₹{cashReceived.toFixed(2)}</span>
+                  <span className="text-gray-900">
+                    ₹{cashReceived.toFixed(2)}
+                  </span>
                 </div>
+
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Change</span>
-                  <span className="text-gray-900">₹{change?.toFixed(2)}</span>
+                  <span className="text-gray-900">
+                    ₹{change?.toFixed(2)}
+                  </span>
                 </div>
               </>
             )}
           </div>
+
 
           {/* Footer */}
           <div className="text-center text-xs text-gray-500 pt-4 border-t border-gray-300">

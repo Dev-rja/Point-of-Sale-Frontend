@@ -17,6 +17,8 @@ interface PaymentModalProps {
     paymentMethod: string;
     total: number;
     items: SaleItem[];
+    cashReceived?: number;
+    change?: number;
   }) => void;
 }
 
@@ -68,6 +70,8 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
           : `Card (**** ${cardNumber.slice(-4)})`,
       total,
       items: cart,
+      cashReceived: paymentMethod === 'cash' ? Number(cashAmount) : undefined,
+      change: paymentMethod === 'cash' ? cashChange : undefined,
     });
     
   
