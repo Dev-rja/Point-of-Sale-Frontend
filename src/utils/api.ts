@@ -167,7 +167,7 @@ export const salesAPI = {
       total: t.total_amount,
       paymentMethod: t.payment_method,
       cashierName: t.cashier,
-      timestamp: t.date_time,
+      timestamp: new Date(t.date_time + 'Z').toISOString(),
       items: t.items ?? [],
     }));
   },
