@@ -58,46 +58,46 @@ function App() {
   const [lastSale, setLastSale] = useState<Sale | null>(null);
 
 
-  // Initialize app and check for existing session
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // Load user from localStorage
+        const storedUser = localStorage.getItem("pos_user");
+        if (storedUser) {
+          setCurrentUser(JSON.parse(storedUser));
+          await loadData();
+        }
+  
         // Check backend health
         const health = await healthCheck();
         console.log('Backend health:', health);
-
-        // Initialize demo data if needed (only once)
+  
+        // Initialize demo data if needed
         const initialized = localStorage.getItem('pos_initialized');
         if (!initialized) {
           console.log('Initializing demo data...');
           const result = await initializeDemoData();
           console.log('Demo data initialization result:', result);
           localStorage.setItem('pos_initialized', 'true');
-          console.log('Demo data initialized successfully');
-          console.log('Demo credentials - Admin: username="admin", password="admin123"');
-          console.log('Demo credentials - Cashier: username="cashier", password="cashier123"');
         } else {
           console.log('System already initialized');
-          console.log('Use these credentials to login:');
-          console.log('Admin: username="admin", password="admin123"');
-          console.log('Cashier: username="cashier", password="cashier123"');
         }
-
-        // Check for existing session
+  
+        // Check session from backend
         const { success, user } = await authAPI.verify();
         if (success && user) {
           setCurrentUser(user);
           await loadData();
         }
+  
       } catch (error) {
         console.error('App initialization error:', error);
-        // Clear initialization flag if there was an error, so it can retry next time
         localStorage.removeItem('pos_initialized');
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     initializeApp();
   }, []);
 
@@ -120,12 +120,15 @@ function App() {
     try {
       const res = await authAPI.login(username, password);
 
-      setCurrentUser({
+      const loggedInUser = {
         id: String(res.user_id),
         username: res.username,
         role: res.role,
-        name: res.username, // or capitalize if you want
-      });
+        name: res.username,
+      };
+
+      setCurrentUser(loggedInUser);
+      localStorage.setItem("pos_user", JSON.stringify(loggedInUser));
       
       setShowSignUp(false);
       await loadData();
@@ -137,10 +140,11 @@ function App() {
 
   const handleLogout = () => {
     authAPI.logout();
+    localStorage.removeItem("pos_user");
     setCurrentUser(null);
     setProducts([]);
     setSales([]);
-  };
+  };  
 
   const handleSignUp = async (
     username: string,
