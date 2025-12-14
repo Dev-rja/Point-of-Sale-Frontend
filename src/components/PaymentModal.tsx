@@ -5,7 +5,7 @@ import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { SaleItem } from '../App';
-import { CreditCard, Wallet, DollarSign, Receipt } from 'lucide-react';
+import { CreditCard, Wallet, IndianRupee, Receipt } from 'lucide-react';
 import { ReceiptModal } from './ReceiptModal';
 
 interface PaymentModalProps {
@@ -104,12 +104,12 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
         <Tabs value={paymentMethod} onValueChange={(v: string) => setPaymentMethod(v as any)}>
           <TabsList className="grid w-full grid-cols-3 bg-[#f0f9ed]">
             <TabsTrigger value="cash" className="data-[state=active]:bg-[#D1EDC5] data-[state=active]:text-[#1a5a1a]">
-              <DollarSign className="size-4 mr-1" />
+              <IndianRupee  className="size-4 mr-1" />
               Cash
             </TabsTrigger>
-            <TabsTrigger value="gcash" className="data-[state=active]:bg-[#D1EDC5] data-[state=active]:text-[#1a5a1a]">
+            <TabsTrigger value="paytm" className="data-[state=active]:bg-[#D1EDC5] data-[state=active]:text-[#1a5a1a]">
               <Wallet className="size-4 mr-1" />
-              GCash
+              Paytm
             </TabsTrigger>
             <TabsTrigger value="card" className="data-[state=active]:bg-[#D1EDC5] data-[state=active]:text-[#1a5a1a]">
               <CreditCard className="size-4 mr-1" />
@@ -141,17 +141,17 @@ export function PaymentModal({ total, cart, cashierName, onClose, onPaymentCompl
             )}
           </TabsContent>
 
-          <TabsContent value="gcash" className="space-y-4">
+          <TabsContent value="paytm" className="space-y-4">
             <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
               <p className="text-sm text-blue-800">
-                Ask customer to send ₹{total.toFixed(2)} to your GCash number and provide the reference number.
+                Ask customer to send ₹{total.toFixed(2)} to your Paytm number and provide the reference number.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="gcashNumber">Customer GCash Number</Label>
+              <Label htmlFor="paytmNumber">Customer Paytm Number</Label>
               <Input
-                id="gcashNumber"
+                id="paytmNumber"
                 type="tel"
                 placeholder="09XX XXX XXXX"
                 value={paytmNumber}
