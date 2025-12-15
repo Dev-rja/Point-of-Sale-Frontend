@@ -104,7 +104,7 @@ export function LoginPage({ onLogin, onGoToSignUp }: LoginPageProps) {
                   type="button"
                   onClick={onGoToSignUp} 
                   className="text-[#4A7C3A] hover:text-[#2D5016] transition-colors"
-                >
+                > 
                   Sign up
                 </button> */}
               </div>
