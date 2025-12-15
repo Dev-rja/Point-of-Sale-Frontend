@@ -100,13 +100,13 @@ export function LoginPage({ onLogin, onGoToSignUp }: LoginPageProps) {
               </div>
 
               <div className="flex items-center justify-end">
-                <button 
+                {/* <button 
                   type="button"
                   onClick={onGoToSignUp} 
                   className="text-[#4A7C3A] hover:text-[#2D5016] transition-colors"
                 >
                   Sign up
-                </button>
+                </button> */}
               </div>
 
               <Button 
