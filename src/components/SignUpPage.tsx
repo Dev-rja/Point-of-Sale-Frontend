@@ -5,8 +5,15 @@ import { Input } from './ui/input';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 
+
 interface SignUpPageProps {
-  onSignUp: (username: string, email: string, password: string, role: 'admin' | 'cashier') => Promise<void>;
+  onSignUp: (
+    username: string,
+    email: string,
+    password: string,
+    role: 'admin' | 'cashier',
+    name: string
+  ) => Promise<void>;
   onBackToLogin: () => void;
 }
 
@@ -14,6 +21,7 @@ type UserRole = 'admin' | 'cashier';
 
 export function SignUpPage({ onSignUp, onBackToLogin }: SignUpPageProps) {
   const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('admin');
@@ -45,7 +53,7 @@ export function SignUpPage({ onSignUp, onBackToLogin }: SignUpPageProps) {
     setIsLoading(true);
     try {
       // Call the sign-up handler
-      await onSignUp(username, email, password, selectedRole);
+      await onSignUp(username, email, password, selectedRole, name);
       setSuccess(true);
       
       // Clear form
@@ -145,6 +153,19 @@ export function SignUpPage({ onSignUp, onBackToLogin }: SignUpPageProps) {
                   </AlertDescription>
                 </Alert>
               )}
+
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-[#2D5016]">Full Name</label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full h-12 px-4 rounded-xl border-2 border-[#D4E7C5] bg-[#FAFBF8] text-[#2D5016] placeholder:text-[#5B7A4A]/50 focus:border-[#4A7C3A] focus:ring-2 focus:ring-[#4A7C3A]/20 transition-all"
+                />
+              </div>
 
               <div className="space-y-2">
                 <label htmlFor="username" className="text-[#2D5016]">Username</label>

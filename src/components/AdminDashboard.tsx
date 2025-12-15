@@ -9,6 +9,8 @@ import { ReportsPage } from './ReportsPage';
 import { SalesTransaction } from './SalesTransaction';
 import { LogOut, LayoutDashboard, Package, FileText, ShoppingCart, TrendingUp, AlertTriangle, Boxes } from 'lucide-react';
 import logo from '../assets/pos-logo.jpg';
+import { API_BASE } from '../api/base';
+
 
 interface AdminDashboardProps {
   user: User;
@@ -44,7 +46,7 @@ export function AdminDashboard({
   const [categories, setCategories] = useState<Category[]>([]);
 
   const loadCategories = () => {
-    fetch("http://localhost:5000/categories")
+    fetch(`${API_BASE}/products`)
       .then(res => res.json())
       .then(data => {
         const normalized = data.map((c: any) => ({

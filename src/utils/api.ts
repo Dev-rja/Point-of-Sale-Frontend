@@ -1,6 +1,6 @@
 import { User, Product, Sale } from '../App';
 
-const API_BASE = 'http://localhost:5000';
+export const API_BASE = "http://127.0.0.1:5000";
 
 let accessToken: string | null = null;
 
@@ -71,23 +71,26 @@ export const authAPI = {
   async verify(): Promise<{ success: boolean; user?: User }> {
     const token = getAccessToken();
     if (!token) return { success: false };
-
+  
     try {
-      const response = await fetch(`${API_BASE}/auth/verify`, {
-        headers: getHeaders(),
+      const response = await fetch(`${API_BASE}/api/verify`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
-
+  
       if (!response.ok) {
         setAccessToken(null);
         return { success: false };
       }
-
+  
       return await response.json();
     } catch {
       setAccessToken(null);
       return { success: false };
     }
-  },
+  },  
 
   logout() {
     setAccessToken(null);

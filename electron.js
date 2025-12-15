@@ -1,59 +1,89 @@
-// electron.js
+console.log("Electron main file starting...");
+
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
-const express = require("express");
+const { startBackend } = require("./start-backend");
+
+let backendProcess = null;
+let mainWindow = null;
 
 const isDev = !app.isPackaged;
 
 function createWindow() {
-  const win = new BrowserWindow({
+  console.log("createWindow() called");
+
+  mainWindow = new BrowserWindow({
     width: 1280,
-    height: 720,
+    height: 800,
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      enableRemoteModule: false,
     },
   });
 
+  const devURL = process.env.VITE_DEV_SERVER_URL || "http://localhost:3003";
+  console.log("Loading URL:", devURL);
+
   if (isDev) {
-    // 💻 DEV: run `npm run dev` and `npm run start:desktop`
-    win.loadURL("http://localhost:3000");
-    // win.webContents.openDevTools();
+    console.log("⚡ DEV MODE loading:", devURL);
+    mainWindow
+      .loadURL(devURL)
+      .then(() => {
+        console.log("Dev URL loaded successfully");
+        mainWindow.webContents.openDevTools();
+      })
+      .catch((err) => console.error("Failed to load dev URL:", err));
   } else {
-    // 📦 PROD: serve the built React app from /build
-    const appPath = app.getAppPath();              // base path in packaged app
-    const staticPath = path.join(appPath, "build");
-
-    const expressApp = express();
-
-    // static files (JS, CSS, images)
-    expressApp.use(express.static(staticPath));
-
-    // SPA fallback – any route -> index.html
-    expressApp.use((_req, res) => {
-      res.sendFile(path.join(staticPath, "index.html"));
-    });
-
-    const server = expressApp.listen(0, () => {
-      const port = server.address().port;
-      win.loadURL(`http://localhost:${port}`);
-         win.webContents.openDevTools(); // enable if you need to debug prod
-    });
-
-    win.on("closed", () => {
-      server.close();
-    });
+    console.log("📦 PROD MODE loading build/");
+    mainWindow
+      .loadFile(path.join(__dirname, "build", "index.html"))
+      .then(() => {
+        console.log("Production file loaded successfully");
+        mainWindow.webContents.openDevTools();
+      })
+      .catch((err) => console.error("Failed to load production file:", err));
   }
+
+  mainWindow.on("closed", () => {
+    console.log("🪟 Main window closed");
+    mainWindow = null;
+  });
 }
 
 app.whenReady().then(() => {
+  console.log("🚀 app.whenReady()");
+
+  try {
+    backendProcess = startBackend();
+    console.log("✅ Backend process started");
+  } catch (err) {
+    console.error("❌ Failed to start backend process:", err);
+  }
+
   createWindow();
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
   });
 });
 
+app.on("before-quit", () => {
+  console.log("🧹 before-quit");
+
+  if (backendProcess) {
+    console.log("🔴 Killing backend process...");
+    backendProcess.kill("SIGTERM");
+    backendProcess = null;
+  }
+});
+
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+  if (process.platform !== "darwin") {
+    console.log("Quitting app...");
+    app.quit();
+  }
 });

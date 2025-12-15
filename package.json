@@ -55,16 +55,22 @@
             "@types/react": "^19.2.7",
             "@types/react-dom": "^19.2.3",
             "@vitejs/plugin-react-swc": "^3.10.2",
-            "electron": "^39.2.4",
+            "concurrently": "^9.2.1",
+            "cross-env": "^10.1.0",
+            "electron": "^39.2.7",
             "electron-builder": "^26.0.12",
             "typescript": "^5.9.3",
-            "vite": "^6.4.1"
+            "vite": "^6.4.1",
+            "wait-on": "^9.0.3"
       },
       "scripts": {
             "dev": "vite",
             "build": "vite build",
             "start:desktop": "node ./node_modules/electron/cli.js .",
-            "build:exe": "npm run build && electron-builder"
+            "build:exe": "npm run build && electron-builder",
+            "desktop": "electron .",
+            "desktop:dev": "concurrently -n VITE,ELECTRON \"npm run dev\" \"wait-on http://localhost:3002 && electron .\""
+
       },
       "build": {
             "productName": "Point of Sale System",

@@ -7,6 +7,8 @@ import { User, Product, Sale, SaleItem } from "../App";
 import { Plus, Minus, Trash2, Search, ShoppingCart } from "lucide-react";
 import { PaymentModal } from "./PaymentModal";
 import { ReceiptModal } from "./ReceiptModal";
+import { API_BASE } from "../api/base";
+
 
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
@@ -162,9 +164,6 @@ const CATEGORY_DATA = [
 const FALLBACK_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect width='100%25' height='100%25' fill='%23eef2e7'/%3E%3Ctext x='50%25' y='50%25' fill='%2390a88a' font-family='Arial' font-size='20' text-anchor='middle' alignment-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
 
-  const BACKEND_URL = (
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"
-  ).replace(/\/$/, "");
   
 
 // build a name => image mapping for quick fallback lookup
@@ -355,7 +354,7 @@ export function SalesTransaction({
   const getCategoryImageUrl = (cat: Category | { name: string; imagePath?: string | null }) => {
     if (cat.imagePath) {
       // assume backend stores images under /static/category_images/<filename>
-      return `${BACKEND_URL}/static/category_images/${cat.imagePath}`;
+      return `${API_BASE}/static/category_images/${cat.imagePath}`;
     }
     // fallback to the online images map
     return CATEGORY_IMAGES[cat.name] || FALLBACK_IMAGE;

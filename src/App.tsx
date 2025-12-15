@@ -5,11 +5,16 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { CashierInterface } from './components/CashierInterface';
 import { authAPI, salesAPI, initializeDemoData, healthCheck } from './utils/api';
 import { fetchProducts, createProduct, updateProduct } from './api/products';
+import { API_BASE } from './api/base';
+
+
+fetch(`${API_BASE}/products`)
+
 
 // ========= Types =========
 
 export interface User {
-  id: string;
+  id: number;
   username: string;
   role: 'admin' | 'cashier';
   name: string;
@@ -84,12 +89,29 @@ function App() {
         }
   
         // Check session from backend
-        const { success, user } = await authAPI.verify();
-        if (success && user) {
-          setCurrentUser(user);
-          await loadData();
+        const stored = localStorage.getItem("pos_user");
+
+        if (stored) {
+          const parsed = JSON.parse(stored);
+        
+          const restoredUser = {
+            ...parsed,
+            id: Number(parsed.id),
+          };
+        
+          if (!restoredUser.id || Number.isNaN(restoredUser.id)) {
+            console.error("INVALID USER IN STORAGE:", parsed);
+        
+            // cleanup corrupted session
+            localStorage.removeItem("pos_user");
+            setCurrentUser(null);
+          } else {
+            console.log("RESTORED USER:", restoredUser);
+            setCurrentUser(restoredUser);
+          }
         }
-  
+        
+        await loadData();            
       } catch (error) {
         console.error('App initialization error:', error);
         localStorage.removeItem('pos_initialized');
@@ -119,16 +141,23 @@ function App() {
   const handleLogin = async (username: string, password: string) => {
     try {
       const res = await authAPI.login(username, password);
-
+      
+      if (!res.user?.id) {
+        throw new Error("Login response missing user.id");
+      }
+      
       const loggedInUser = {
-        id: String(res.user_id),
-        username: res.username,
-        role: res.role,
-        name: res.username,
+        id: Number(res.user.id),
+        username: res.user.username,
+        role: res.user.role,
+        name: res.user.name ?? res.user.username,
       };
-
+      
+      console.log("LOGIN USER:", loggedInUser);
+      
       setCurrentUser(loggedInUser);
       localStorage.setItem("pos_user", JSON.stringify(loggedInUser));
+      
       
       setShowSignUp(false);
       await loadData();
@@ -150,16 +179,34 @@ function App() {
     username: string,
     email: string,
     password: string,
-    role: 'admin' | 'cashier'
+    role: 'admin' | 'cashier',
+    name: string
   ) => {
     try {
-      const name = username.charAt(0).toUpperCase() + username.slice(1);
-      await authAPI.signup(username, email, password, role, name);
+      const res = await fetch(`${API_BASE}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          role,
+          name, // <-- real full name from input
+        }),
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data.error || "Signup failed");
+      }
+  
+      return data;
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error("Signup error:", error);
       throw error;
     }
-  };
+  };  
 
   const handleGoToSignUp = () => {
     setShowSignUp(true);
@@ -218,11 +265,12 @@ function App() {
     }
   
     try {
+
       const payload = {
-        user_id: Number(currentUser.id),
+        user_id: currentUser.id,
         payment_method: saleData.paymentMethod,
         total_amount: saleData.total,
-        cashier: saleData.cashierName,
+        cashier: currentUser.username,
         items: saleData.items.map(item => ({
           product_id: item.product_id,
           quantity: item.quantity,
@@ -230,6 +278,7 @@ function App() {
         })),
       };
 
+      console.log("USING USER:", currentUser);
       console.log('FINAL PAYLOAD:', payload);
   
       const newSale = await salesAPI.create(payload);
